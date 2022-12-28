@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import List, Optional, Union
 
 import praw
+import requests
 import yaml
+from praw import Reddit
 from praw.models import Submission
 
 
@@ -137,6 +139,10 @@ SUBREDDIT_WATCHEXCHANGE = "watchexchange"
 LOGGER = __get_logger()
 
 
+def get_permalink(reddit: Reddit, submission: Submission):
+    return f"{reddit.config.reddit_url + submission.permalink}"
+
+
 def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> bool:
     # Check the title. If that doesn't match, go to the next item and mark this as processed
     if not criterion.check_title(submission.title):
@@ -170,7 +176,7 @@ def process_loop(reddit: praw.Reddit, args, callback=None):
 
         LOGGER.info("")
         LOGGER.info(f"Incoming submission ({submission.id}):")
-        LOGGER.debug(f"  URL: {reddit.config.reddit_url + submission.permalink}")
+        LOGGER.debug(f"  URL: {get_permalink(reddit, submission)}")
         LOGGER.debug(f"  Title: {submission.title}")
         LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
