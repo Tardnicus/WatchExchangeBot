@@ -31,11 +31,6 @@ def __get_logger() -> logging.Logger:
     return logger
 
 
-RE_TRANSACTIONS = re.compile(r"^\d+")
-SUBREDDIT_WATCHEXCHANGE = "watchexchange"
-LOGGER = __get_logger()
-
-
 @unique
 class SubmissionType(Enum):
     def __init__(self, value):
@@ -105,6 +100,10 @@ class SubmissionCriteria:
 
         return False
 
+
+RE_TRANSACTIONS = re.compile(r"^\d+")
+SUBREDDIT_WATCHEXCHANGE = "watchexchange"
+LOGGER = __get_logger()
 
 # Will be replaced with a more permanent data storage later
 criteria = [
