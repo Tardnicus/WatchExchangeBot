@@ -72,7 +72,7 @@ class SubmissionCriteria:
         if min_transactions < 0:
             raise ValueError("min_transactions must be a positive integer!")
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}<{self.submission_type.value}, {self.min_transactions}, {self.keywords}, {self.all_required}>"
 
     def check_title(self, title: str):
