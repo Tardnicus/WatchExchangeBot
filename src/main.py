@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 from enum import Enum, unique
@@ -6,7 +7,23 @@ from typing import List, Optional, Union
 import praw
 from praw.models import Submission
 
-RE_TRANSACTIONS = re.compile(r'^\d+')
+
+def __get_logger() -> logging.Logger:
+    logging.basicConfig(
+        stream=sys.stdout,
+        format="{asctime} - {name:<13} {levelname:<8}:  {message}",
+        style="{"
+    )
+
+    # TODO: refactor to env var or argument
+    logger = logging.getLogger("watchexchange")
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+
+RE_TRANSACTIONS = re.compile(r"^\d+")
+SUBREDDIT_WATCHEXCHANGE = "watchexchange"
+LOGGER = __get_logger()
 
 
 @unique
@@ -89,16 +106,16 @@ criteria = [
 def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> bool:
     # Check the title. If that doesn't match, go to the next item and mark this as processed
     if not criterion.check_title(submission.title):
-        print(f"[INFO] Submission (id {submission.id}) failed to match title criteria, for {criterion}:\n\t({submission.title})")
+        LOGGER.debug("    Failed on title criteria (1/2)")
         return False
 
     # Check minimum transactions of the submitting user
     try:
         if int(RE_TRANSACTIONS.match(submission.author_flair_text)[0]) < criterion.min_transactions:
-            print(f"[INFO] Submission (id {submission.id}) failed to match minimum transaction count ({submission.author_flair_text}), for {criterion}:\n\t({submission.title})")
+            LOGGER.debug("    Failed on minimum transaction count (2/2)")
             return False
     except TypeError:
-        print(f"[ERROR] Submission (id {submission.id}) has an INVALID user flair! ({submission.author_flair_text}):\n\t({submission.title})", file=sys.stderr)
+        LOGGER.warning(f"    Submission has INVALID user flair!")
         return False
 
     # If both gates have been passed, we have matched all criteria
@@ -108,18 +125,28 @@ def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> boo
 def process_loop(reddit: praw.Reddit, callback=None):
     """Checks for new posts in the subreddit and matches them against the criteria."""
 
+    LOGGER.info("Started Stream!")
+
     submission: Submission
-    for submission in reddit.subreddit("watchexchange").stream.submissions():
+    for submission in reddit.subreddit(SUBREDDIT_WATCHEXCHANGE).stream.submissions():
+
+        LOGGER.info("")
+        LOGGER.info(f"Incoming submission ({submission.id}):")
+        LOGGER.debug(f"  URL: {reddit.config.reddit_url + submission.permalink}")
+        LOGGER.debug(f"  Title: {submission.title}")
+        LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
         # This is a new post, so we have to analyze it with respect to the criteria.
         for criterion in criteria:
 
+            LOGGER.info(f"  Checking {criterion}...")
+
             if check_criteria(criterion, submission):
                 # TODO: Run callback function
-                print(f"Matched!\n\t{reddit.config.reddit_url + submission.permalink}\n\t{submission.title}")
+                LOGGER.info("    Matched!")
                 pass
             else:
-                print("Not matched")
+                LOGGER.info("    Did not match")
 
 
 def main(argv):
