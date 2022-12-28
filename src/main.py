@@ -1,7 +1,7 @@
 import re
 import sys
 from enum import Enum, unique
-from typing import List, Set, Optional, Union
+from typing import List, Optional, Union
 
 import praw
 from praw.models import Submission
@@ -85,10 +85,6 @@ criteria = [
     SubmissionCriteria(SubmissionType.WTS, keywords=["Omega"])
 ]
 
-# A set of submission ids that have already been processed.
-# Will be replaced with a more permanent data storage later
-cache: Set[str] = set()
-
 
 def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> bool:
     # Check the title. If that doesn't match, go to the next item and mark this as processed
@@ -115,10 +111,6 @@ def process_loop(reddit: praw.Reddit, callback=None):
     submission: Submission
     for submission in reddit.subreddit("watchexchange").stream.submissions():
 
-        # First check if we have processed the submission already
-        if submission.id in cache:
-            continue
-
         # This is a new post, so we have to analyze it with respect to the criteria.
         for criterion in criteria:
 
@@ -128,8 +120,6 @@ def process_loop(reddit: praw.Reddit, callback=None):
                 pass
             else:
                 print("Not matched")
-
-        cache.add(submission.id)
 
 
 def main(argv):
