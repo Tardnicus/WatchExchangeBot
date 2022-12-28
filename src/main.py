@@ -1,4 +1,6 @@
+import argparse
 import logging
+import os
 import re
 import sys
 from enum import Enum, unique
@@ -11,13 +13,21 @@ from praw.models import Submission
 def __get_logger() -> logging.Logger:
     logging.basicConfig(
         stream=sys.stdout,
-        format="{asctime} - {name:<13} {levelname:<8}:  {message}",
+        format="{asctime} - {name:<12} {levelname:<8}:  {message}",
         style="{"
     )
 
-    # TODO: refactor to env var or argument
-    logger = logging.getLogger("watchexchange")
-    logger.setLevel(logging.DEBUG)
+    # Get log level from env var
+    log_level = os.environ.get("WEMB_LOGLEVEL") or logging.DEBUG
+
+    logger = logging.getLogger("wemb.core")
+
+    try:
+        logger.setLevel(log_level)
+    except ValueError:
+        logger.setLevel(logging.DEBUG)
+        logger.warning(f"Invalid WEMB_LOGLEVEL ({log_level})! Defaulting to DEBUG...")
+
     return logger
 
 
