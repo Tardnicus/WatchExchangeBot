@@ -187,13 +187,16 @@ def process_loop(reddit: praw.Reddit, args, callback=None):
 
             if check_criteria(criterion, submission):
                 LOGGER.info("    Matched! Sending message...")
-                callback(submission, config.webhookUrl, config.mentionString)
+                callback(reddit, submission, config.webhookUrl, config.mentionString)
             else:
                 LOGGER.info("    Did not match")
 
 
-def post_discord_message(submission, webhook_url, mention_string):
-    pass
+def post_discord_message(reddit: Reddit, submission: Submission, webhook_url, mention_string):
+    r = requests.post(webhook_url, json={
+        "content": f"{mention_string} {get_permalink(reddit, submission)}",
+    })
+    LOGGER.debug(f"Response: {r}")
 
 
 def main():
