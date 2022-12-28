@@ -4,9 +4,11 @@ import os
 import re
 import sys
 from enum import Enum, unique
+from pathlib import Path
 from typing import List, Optional, Union
 
 import praw
+import yaml
 from praw.models import Submission
 
 
@@ -101,15 +103,38 @@ class SubmissionCriteria:
         return False
 
 
+class ProgramConfiguration:
+    """A class representing a state of the config file."""
+
+    def __init__(self, config_file: str):
+        config_path = Path(config_file)
+
+        if not config_path.is_file():
+            raise ValueError(f"Config file at {config_path} does not exist!")
+
+        with config_path.open() as file:
+            contents = yaml.safe_load(file)
+
+        self.criteria: List[SubmissionCriteria] = list()
+
+        # Read every serialized version of the criteria and save it to this object.
+        for criterion in contents["criteria"]:
+            self.criteria.append(SubmissionCriteria(
+                criterion["submissionType"],
+                min_transactions=criterion["minTransactions"],
+                keywords=criterion["keywords"],
+                all_required=criterion["allRequired"]
+            ))
+
+        LOGGER.debug(f"  Loaded {len(self.criteria)} criteria: {self.criteria}")
+
+        self.webhookUrl = contents["callback"]["webhookUrl"]
+        self.mentionString = contents["callback"]["mentionString"]
+
+
 RE_TRANSACTIONS = re.compile(r"^\d+")
 SUBREDDIT_WATCHEXCHANGE = "watchexchange"
 LOGGER = __get_logger()
-
-# Will be replaced with a more permanent data storage later
-criteria = [
-    SubmissionCriteria(SubmissionType.WTS, keywords=["Seiko"]),
-    SubmissionCriteria(SubmissionType.WTS, keywords=["Omega"])
-]
 
 
 def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> bool:
@@ -131,8 +156,12 @@ def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> boo
     return True
 
 
-def process_loop(reddit: praw.Reddit, callback=None):
+def process_loop(reddit: praw.Reddit, args, callback=None):
     """Checks for new posts in the subreddit and matches them against the criteria."""
+
+    LOGGER.info("Reading configuration!")
+
+    config = ProgramConfiguration(args.config_file)
 
     LOGGER.info("Started Stream!")
 
@@ -146,24 +175,37 @@ def process_loop(reddit: praw.Reddit, callback=None):
         LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
         # This is a new post, so we have to analyze it with respect to the criteria.
-        for criterion in criteria:
+        for criterion in config.criteria:
 
             LOGGER.info(f"  Checking {criterion}...")
 
             if check_criteria(criterion, submission):
-                # TODO: Run callback function
-                LOGGER.info("    Matched!")
-                pass
+                LOGGER.info("    Matched! Sending message...")
+                callback(submission, config.webhookUrl, config.mentionString)
             else:
                 LOGGER.info("    Did not match")
 
 
-def main(argv):
+def post_discord_message(submission, webhook_url, mention_string):
+    pass
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="r/Watchexchange Monitor Bot",
+        description="Monitors r/Watchexchange for items that match specific criteria",
+        epilog="https://github.com/Tardnicus/watch-exchange-bot"
+    )
+
+    parser.add_argument("-f", "--config-file", default="config.yaml")
+
+    args = parser.parse_args()
+
     # Dependent on a praw.ini file containing client_id, client_secret, and user_agent.
     reddit = praw.Reddit(read_only=True)
 
-    process_loop(reddit)
+    process_loop(reddit, args, callback=post_discord_message)
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
