@@ -115,6 +115,10 @@ This program uses a [`config.yaml`](./wemb/src/config.yaml) to control some appl
 
 🚨 This will likely be removed in the future!
 
+### Note About Docker
+
+When running in Docker Compose, a valid configuration must be mounted to the container, as one is not available as default. There is an example provided in the [`docker-compose.yaml`](docker-compose.yaml) file 
+
 ### Criteria
 
 A top-level list of criteria that the bot will use to evaluate posts against. This is the only way to provide criteria to the bot.
