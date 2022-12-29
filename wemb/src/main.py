@@ -45,7 +45,7 @@ class SubmissionType(Enum):
     WTS = "WTS"
 
 
-class SubmissionCriteria:
+class SubmissionCriterion:
     """Class that represents some criteria for finding a post on the subreddit. Each instance of this object represents a different query.
 
     submission_type - Which post stream to consider. Either "WTB" (Want to buy) or "WTS" (Want to sell)
@@ -117,11 +117,11 @@ class ProgramConfiguration:
         with config_path.open() as file:
             contents = yaml.safe_load(file)
 
-        self.criteria: List[SubmissionCriteria] = list()
+        self.criteria: List[SubmissionCriterion] = list()
 
         # Read every serialized version of the criteria and save it to this object.
         for criterion in contents["criteria"]:
-            self.criteria.append(SubmissionCriteria(
+            self.criteria.append(SubmissionCriterion(
                 criterion["submissionType"],
                 min_transactions=criterion["minTransactions"],
                 keywords=criterion["keywords"],
@@ -143,7 +143,7 @@ def get_permalink(reddit: Reddit, submission: Submission):
     return f"{reddit.config.reddit_url + submission.permalink}"
 
 
-def check_criteria(criterion: SubmissionCriteria, submission: Submission) -> bool:
+def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bool:
     # Check the title. If that doesn't match, go to the next item and mark this as processed
     if not criterion.check_title(submission.title):
         LOGGER.debug("    Failed on title criteria (1/2)")
