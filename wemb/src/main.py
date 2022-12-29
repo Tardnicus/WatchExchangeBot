@@ -2,9 +2,11 @@ import argparse
 import logging
 import os
 import re
+import signal
 import sys
 from enum import Enum, unique
 from pathlib import Path
+from time import sleep
 from typing import List, Optional, Union
 
 import praw
@@ -225,6 +227,12 @@ def post_discord_message(
     LOGGER.debug(f"Response: {response}")
 
 
+def __signal_handler(signum, frame):
+    LOGGER.info("SIGINT/SIGTERM Captured! Exiting...")
+    sleep(1)
+    sys.exit(0)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="r/Watchexchange Monitor Bot",
@@ -238,6 +246,10 @@ def main():
 
     # Dependent on a praw.ini file containing client_id, client_secret, and user_agent.
     reddit = praw.Reddit(read_only=True)
+
+    # Set signal handler for Ctrl+C and SIGTERM
+    signal.signal(signal.SIGINT, __signal_handler)
+    signal.signal(signal.SIGTERM, __signal_handler)
 
     process_submissions(reddit, args, callback=post_discord_message)
 
