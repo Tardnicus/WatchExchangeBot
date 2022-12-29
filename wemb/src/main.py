@@ -19,7 +19,7 @@ def __get_logger() -> logging.Logger:
     logging.basicConfig(
         stream=sys.stdout,
         format="{asctime} - {name:<12} {levelname:<8}:  {message}",
-        style="{"
+        style="{",
     )
 
     # Get log level from env var
@@ -70,7 +70,13 @@ class SubmissionCriterion:
 
         return keywords
 
-    def __init__(self, submission_type: Union[SubmissionType, str], min_transactions: int = 5, keywords: Optional[List[str]] = None, all_required: bool = True) -> None:
+    def __init__(
+        self,
+        submission_type: Union[SubmissionType, str],
+        min_transactions: int = 5,
+        keywords: Optional[List[str]] = None,
+        all_required: bool = True,
+    ):
         self.submission_type: SubmissionType = SubmissionType(submission_type)
         self.min_transactions: int = min_transactions
         self.keywords: List[str] = self.__process_keywords(keywords)
@@ -124,12 +130,14 @@ class ProgramConfiguration:
 
         # Read every serialized version of the criteria and save it to this object.
         for criterion in contents["criteria"]:
-            self.criteria.append(SubmissionCriterion(
-                criterion["submissionType"],
-                min_transactions=criterion["minTransactions"],
-                keywords=criterion["keywords"],
-                all_required=criterion["allRequired"]
-            ))
+            self.criteria.append(
+                SubmissionCriterion(
+                    criterion["submissionType"],
+                    min_transactions=criterion["minTransactions"],
+                    keywords=criterion["keywords"],
+                    all_required=criterion["allRequired"],
+                )
+            )
 
         LOGGER.debug(f"  Loaded {len(self.criteria)} criteria: {self.criteria}")
 
@@ -158,7 +166,10 @@ def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bo
 
     # Check minimum transactions of the submitting user
     try:
-        if int(RE_TRANSACTIONS.match(submission.author_flair_text)[0]) < criterion.min_transactions:
+        if (
+            int(RE_TRANSACTIONS.match(submission.author_flair_text)[0])
+            < criterion.min_transactions
+        ):
             LOGGER.debug("    Failed on minimum transaction count (2/2)")
             return False
     except TypeError:
@@ -199,12 +210,17 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
                 LOGGER.info("    Did not match")
 
 
-def post_discord_message(reddit: Reddit, submission: Submission, webhook_url, mention_string):
+def post_discord_message(
+    reddit: Reddit, submission: Submission, webhook_url, mention_string
+):
     """Posts a message using a webhook, including the submission URL and mentioning a user/role"""
 
-    response = requests.post(webhook_url, json={
-        "content": f"{mention_string} {get_permalink(reddit, submission)}",
-    })
+    response = requests.post(
+        webhook_url,
+        json={
+            "content": f"{mention_string} {get_permalink(reddit, submission)}",
+        },
+    )
 
     LOGGER.debug(f"Response: {response}")
 
@@ -213,7 +229,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="r/Watchexchange Monitor Bot",
         description="Monitors r/Watchexchange for items that match specific criteria",
-        epilog="https://github.com/Tardnicus/watch-exchange-bot"
+        epilog="https://github.com/Tardnicus/watch-exchange-bot",
     )
 
     parser.add_argument("-f", "--config-file", default="config.yaml")
@@ -226,5 +242,5 @@ def main():
     process_submissions(reddit, args, callback=post_discord_message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
