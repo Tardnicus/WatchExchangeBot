@@ -1,0 +1,12 @@
+version: '3.9'
+services:
+  wemb-core:
+    build: './wemb'
+    restart: unless-stopped
+    environment:
+      - praw_client_id=${PRAW_CLIENT_ID}
+      - praw_client_secret=${PRAW_CLIENT_SECRET}
+      - praw_user_agent=${PRAW_USER_AGENT}
+      - WEMB_LOGLEVEL=DEBUG
+    volumes:
+      - './wemb/src/config.yaml:/app/config.yaml:ro'

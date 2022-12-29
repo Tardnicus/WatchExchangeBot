@@ -1,0 +1,12 @@
+criteria:
+  - submissionType: "WTS"
+    minTransactions: 10
+    keywords:
+      - "Seiko"
+      - "SARB017"
+      - "Alpinist"
+    allRequired: true
+callback:
+  webhookUrl: "https://discord.com/api/webhooks/<id>/<token>"
+  # Use "<@&role_id>" for roles, and "<@user_id>" for specific users
+  mentionString: "<@&role_id>"
