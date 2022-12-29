@@ -1,4 +1,4 @@
 [DEFAULT]
 client_id=
 client_secret=
-user_agent=
+user_agent=linux:com.example.watchexchangemonitorbot:0.1.0 (by /u/username)
