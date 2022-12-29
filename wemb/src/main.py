@@ -15,6 +15,7 @@ from praw.models import Submission
 
 
 def __get_logger() -> logging.Logger:
+    """Sets basic logging configuration and returns the logger for this module. Reads an env var called WEMB_LOGLEVEL to set the log level"""
     logging.basicConfig(
         stream=sys.stdout,
         format="{asctime} - {name:<12} {levelname:<8}:  {message}",
@@ -37,8 +38,10 @@ def __get_logger() -> logging.Logger:
 
 @unique
 class SubmissionType(Enum):
+    """Represents a type of submission (either WTS or WTB)"""
+
     def __init__(self, value):
-        # Formats a string such as [wts] or [wtb]
+        # Formats a string such as [wts] or [wtb] for comparison purposes
         self.formatted_value = f"[{str(value).lower()}]"
 
     WTB = "WTB"
@@ -106,7 +109,7 @@ class SubmissionCriterion:
 
 
 class ProgramConfiguration:
-    """A class representing a state of the config file."""
+    """A class representing a state of the config file. This will likely get removed in the next version"""
 
     def __init__(self, config_file: str):
         config_path = Path(config_file)
@@ -140,10 +143,14 @@ LOGGER = __get_logger()
 
 
 def get_permalink(reddit: Reddit, submission: Submission):
+    """Gets a permalink to the submission passed in the second argument"""
+
     return f"{reddit.config.reddit_url + submission.permalink}"
 
 
 def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bool:
+    """Helper function that checks a given criterion object against a submission. Returns true if all gates pass, false otherwise."""
+
     # Check the title. If that doesn't match, go to the next item and mark this as processed
     if not criterion.check_title(submission.title):
         LOGGER.debug("    Failed on title criteria (1/2)")
@@ -162,8 +169,8 @@ def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bo
     return True
 
 
-def process_loop(reddit: praw.Reddit, args, callback=None):
-    """Checks for new posts in the subreddit and matches them against the criteria."""
+def process_submissions(reddit: praw.Reddit, args, callback=None):
+    """Checks for new posts in the subreddit and matches them against the criteria. Blocks "forever", or until a praw exception occurs. It's expected for the caller to re-call this if necessary"""
 
     LOGGER.info("Reading configuration!")
 
@@ -193,10 +200,13 @@ def process_loop(reddit: praw.Reddit, args, callback=None):
 
 
 def post_discord_message(reddit: Reddit, submission: Submission, webhook_url, mention_string):
-    r = requests.post(webhook_url, json={
+    """Posts a message using a webhook, including the submission URL and mentioning a user/role"""
+
+    response = requests.post(webhook_url, json={
         "content": f"{mention_string} {get_permalink(reddit, submission)}",
     })
-    LOGGER.debug(f"Response: {r}")
+
+    LOGGER.debug(f"Response: {response}")
 
 
 def main():
@@ -213,7 +223,7 @@ def main():
     # Dependent on a praw.ini file containing client_id, client_secret, and user_agent.
     reddit = praw.Reddit(read_only=True)
 
-    process_loop(reddit, args, callback=post_discord_message)
+    process_submissions(reddit, args, callback=post_discord_message)
 
 
 if __name__ == '__main__':
