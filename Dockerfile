@@ -11,11 +11,11 @@ USER python
 WORKDIR /app
 
 # Only copy requirements first and install before proceeding
-# This way, changes in the main script
+# This way, changes in the main script won't cause a re-install
 COPY --chown=python:python ./src/requirements.txt /app/
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=python:python ./src/main.py /app/
+COPY --chown=python:python ./src/wemb/ /app/
 
 # A config.yaml mount point is expected, as well as env vars for PRAW
 ENTRYPOINT [ "python", "./main.py" ]
