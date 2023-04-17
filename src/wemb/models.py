@@ -3,7 +3,13 @@ from enum import Enum, unique
 from typing import List
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+    validates,
+)
 
 
 @unique
@@ -49,6 +55,12 @@ class SubmissionCriterion(Base):
         back_populates="criterion", cascade="all, delete, delete-orphan"
     )
     all_required: Mapped[bool] = mapped_column(default=True)
+
+    @validates("min_transactions")
+    def validate_min_transactions(self, key, value):
+        if value < 0:
+            raise ValueError("min_transactions must be a positive integer!")
+        return value
 
     def __repr__(self) -> str:
         return f"SubmissionCriterion(id={self.id!r}, submission_type={self.submission_type!r}, min_transactions={self.min_transactions!r}, keywords={self.keywords!r}, all_required={self.all_required!r})"
