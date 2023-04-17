@@ -44,7 +44,13 @@ class Keyword(Base):
 
 
 class SubmissionCriterion(Base):
-    """Represents a single criterion to be matched against posts."""
+    """Class that represents some criteria for finding a post on the subreddit. Each instance of this object represents a different query.
+
+    submission_type - Which post stream to consider. Either "WTB" (Want to buy) or "WTS" (Want to sell)
+    min_transactions - The minimum number of transactions the author of the submission needs to have to be considered. Default 5.
+    keywords - A list of string keywords (case **insensitive**) to filter the title with. See below for behaviour.
+    all_required - If true, ALL keywords are required to be in the title to be considered. Else, only one needs to match.
+    """
 
     __tablename__ = "submission_criterion"
 
@@ -61,6 +67,33 @@ class SubmissionCriterion(Base):
         if value < 0:
             raise ValueError("min_transactions must be a positive integer!")
         return value
+
+    def check_title(self, title: str):
+        """Checks if the passed-in title matches any of the keyword-based criteria in this object. Behaviour depends on self.all_required."""
+
+        title = title.lower()
+
+        # Check if something like "[WTB]" is in the title
+        if self.submission_type.formatted_value not in title:
+            return False
+
+        if self.all_required:
+            # Check if ALL the keywords match
+            for k in self.keywords:
+                # Found a keyword that's not in the title, so we return false
+                if k.content.lower() not in title:
+                    return False
+
+            # None of the keywords caused the loop to exit, which means we found all of them
+            return True
+
+        else:
+            # Check if any of the keywords match
+            for k in self.keywords:
+                if k.content.lower() in title:
+                    return True
+
+        return False
 
     def __repr__(self) -> str:
         return f"SubmissionCriterion(id={self.id!r}, submission_type={self.submission_type!r}, min_transactions={self.min_transactions!r}, keywords={self.keywords!r}, all_required={self.all_required!r})"
