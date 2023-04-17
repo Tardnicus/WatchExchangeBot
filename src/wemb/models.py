@@ -33,6 +33,9 @@ class Keyword(Base):
     criterion_id: Mapped[int] = mapped_column(ForeignKey("submission_criterion.id"))
     criterion: Mapped["SubmissionCriterion"] = relationship(back_populates="keywords")
 
+    def __repr__(self) -> str:
+        return f"Keyword(content={self.content!r}, criterion_id={self.criterion_id!r})"
+
 
 class SubmissionCriterion(Base):
     """Represents a single criterion to be matched against posts."""
@@ -47,6 +50,9 @@ class SubmissionCriterion(Base):
     )
     all_required: Mapped[bool] = mapped_column(default=True)
 
+    def __repr__(self) -> str:
+        return f"SubmissionCriterion(id={self.id!r}, submission_type={self.submission_type!r}, min_transactions={self.min_transactions!r}, keywords={self.keywords!r}, all_required={self.all_required!r})"
+
 
 class ProcessedPost(Base):
     """Used as a cache to keep track of already-processed posts, to prevent a restart from triggering another notification."""
@@ -55,3 +61,6 @@ class ProcessedPost(Base):
 
     id: Mapped[str] = mapped_column(primary_key=True, autoincrement=False)
     date_processed: Mapped[datetime] = mapped_column(default=datetime.now)
+
+    def __repr__(self) -> str:
+        return f"ProcessedPost(id={self.id!r}, date_processed={self.date_processed!r})"
