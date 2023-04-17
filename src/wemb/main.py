@@ -14,6 +14,10 @@ import requests
 import yaml
 from praw import Reddit
 from praw.models import Submission
+from sqlalchemy import create_engine
+
+# TODO: Extract URL string
+engine = create_engine("sqlite:///test.db", echo=True)
 
 
 def __get_logger() -> logging.Logger:
@@ -193,7 +197,6 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
 
     submission: Submission
     for submission in reddit.subreddit(SUBREDDIT_WATCHEXCHANGE).stream.submissions():
-
         LOGGER.info("")
         LOGGER.info(f"Incoming submission ({submission.id}):")
         LOGGER.debug(f"  URL: {get_permalink(reddit, submission)}")
@@ -202,7 +205,6 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
 
         # This is a new post, so we have to analyze it with respect to the criteria.
         for criterion in config.criteria:
-
             LOGGER.info(f"  Checking {criterion}...")
 
             if check_criteria(criterion, submission):
