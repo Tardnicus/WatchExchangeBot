@@ -4,10 +4,9 @@ import os
 import re
 import signal
 import sys
-from enum import Enum, unique
 from pathlib import Path
 from time import sleep
-from typing import List, Optional, Union
+from typing import List
 
 import praw
 import requests
@@ -15,6 +14,8 @@ import yaml
 from praw import Reddit
 from praw.models import Submission
 from sqlalchemy import create_engine
+
+from models import SubmissionCriterion, Keyword, SubmissionType
 
 # TODO: Extract URL string
 engine = create_engine("sqlite:///test.db", echo=True)
@@ -42,86 +43,11 @@ def __get_logger() -> logging.Logger:
     return logger
 
 
-@unique
-class SubmissionType(Enum):
-    """Represents a type of submission (either WTS or WTB)"""
-
-    def __init__(self, value):
-        # Formats a string such as [wts] or [wtb] for comparison purposes
-        self.formatted_value = f"[{str(value).lower()}]"
-
-    WTB = "WTB"
-    WTS = "WTS"
-
-
-class SubmissionCriterion:
-    """Class that represents some criteria for finding a post on the subreddit. Each instance of this object represents a different query.
-
-    submission_type - Which post stream to consider. Either "WTB" (Want to buy) or "WTS" (Want to sell)
-    min_transactions - The minimum number of transactions the author of the submission needs to have to be considered. Default 5.
-    keywords - A list of string keywords (case **insensitive**) to filter the title with. See below for behaviour.
-    all_required - If true, ALL keywords are required to be in the title to be considered. Else, only one needs to match.
-    """
-
-    @staticmethod
-    def __process_keywords(initial: Optional[List[str]]) -> List[str]:
-        keywords = list()
-
-        if initial is None or len(initial) == 0:
-            # Append an empty string item so loop logic works
-            keywords.append("")
-        else:
-            for element in initial:
-                keywords.append(element.lower())
-
-        return keywords
-
-    def __init__(
-        self,
-        submission_type: Union[SubmissionType, str],
-        min_transactions: int = 5,
-        keywords: Optional[List[str]] = None,
-        all_required: bool = True,
-    ):
-        self.submission_type: SubmissionType = SubmissionType(submission_type)
-        self.min_transactions: int = min_transactions
-        self.keywords: List[str] = self.__process_keywords(keywords)
-        self.all_required: bool = all_required
-
-        if min_transactions < 0:
-            raise ValueError("min_transactions must be a positive integer!")
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}<{self.submission_type.value}, {self.min_transactions}, {self.keywords}, {self.all_required}>"
-
-    def check_title(self, title: str):
-        """Checks if the passed-in title matches any of the keyword-based criteria in this object. Behaviour depends on self.all_required."""
-        title = title.lower()
-
-        # Check if something like "[WTB]" is in the title
-        if self.submission_type.formatted_value not in title:
-            return False
-
-        if self.all_required:
-            # Check if ALL the keywords match
-            for k in self.keywords:
-                # Found a keyword that's not in the title, so we return false
-                if k not in title:
-                    return False
-            # None of the keywords caused the loop to exit, which means we found all of them
-            return True
-
-        else:
-            # Check if any of the keywords match
-            for k in self.keywords:
-                if k in title:
-                    return True
-
-        return False
-
-
 class ProgramConfiguration:
-    """A class representing a state of the config file. This will likely get removed in the next version"""
+    """A class representing a state of the config file. This will likely get removed in the next version.
+
+    TODO: Remove, replace with database query
+    """
 
     def __init__(self, config_file: str):
         config_path = Path(config_file)
@@ -138,9 +64,9 @@ class ProgramConfiguration:
         for criterion in contents["criteria"]:
             self.criteria.append(
                 SubmissionCriterion(
-                    criterion["submissionType"],
+                    submission_type=SubmissionType(criterion["submissionType"]),
                     min_transactions=criterion["minTransactions"],
-                    keywords=criterion["keywords"],
+                    keywords=[Keyword(content=k) for k in criterion["keywords"]],
                     all_required=criterion["allRequired"],
                 )
             )
@@ -178,6 +104,7 @@ def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bo
         ):
             LOGGER.debug("    Failed on minimum transaction count (2/2)")
             return False
+
     except TypeError:
         LOGGER.warning(f"    Submission has INVALID user flair!")
         return False
