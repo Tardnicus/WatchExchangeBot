@@ -17,7 +17,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from models import SubmissionCriterion, Keyword, SubmissionType, ProcessedPost
+from models import SubmissionCriterion, Keyword, SubmissionType, ProcessedSubmission
 
 # TODO: Extract URL string
 engine = create_engine("sqlite:///test.db")
@@ -116,7 +116,7 @@ def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bo
 
 
 def process_submissions(reddit: praw.Reddit, args, callback=None):
-    """Checks for new posts in the subreddit and matches them against the criteria. Blocks "forever", or until a praw exception occurs. It's expected for the caller to re-call this if necessary"""
+    """Checks for new submissions in the subreddit and matches them against the criteria. Blocks "forever", or until a praw exception occurs. It's expected for the caller to re-call this if necessary"""
 
     LOGGER.info("Reading configuration!")
 
@@ -135,12 +135,14 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
         LOGGER.debug("  Checking is submission has been processed...")
         with Session(engine) as session:
             if session.scalar(
-                select(ProcessedPost).where(ProcessedPost.id == submission.id)
+                select(ProcessedSubmission).where(
+                    ProcessedSubmission.id == submission.id
+                )
             ):
                 LOGGER.info("  Submission has already been processed! Skipping...")
                 continue
 
-        # This is a new post, so we have to analyze it with respect to the criteria.
+        # This is a new submission, so we have to analyze it with respect to the criteria.
         for criterion in config.criteria:
             LOGGER.info(f"  Checking {criterion}...")
 
@@ -153,7 +155,7 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
         with Session(engine) as session:
             LOGGER.debug("  Adding submission to cache...")
             try:
-                session.add(ProcessedPost(id=submission.id))
+                session.add(ProcessedSubmission(id=submission.id))
                 session.commit()
             except IntegrityError as error:
                 LOGGER.error(

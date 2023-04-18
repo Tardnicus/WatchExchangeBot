@@ -44,9 +44,9 @@ class Keyword(Base):
 
 
 class SubmissionCriterion(Base):
-    """Class that represents some criteria for finding a post on the subreddit. Each instance of this object represents a different query.
+    """Class that represents some criteria for finding a submission on the subreddit. Each instance of this object represents a different query.
 
-    submission_type - Which post stream to consider. Either "WTB" (Want to buy) or "WTS" (Want to sell)
+    submission_type - Which submission stream to consider. Either "WTB" (Want to buy) or "WTS" (Want to sell)
     min_transactions - The minimum number of transactions the author of the submission needs to have to be considered. Default 5.
     keywords - A list of string keywords (case **insensitive**) to filter the title with. See below for behaviour.
     all_required - If true, ALL keywords are required to be in the title to be considered. Else, only one needs to match.
@@ -99,13 +99,13 @@ class SubmissionCriterion(Base):
         return f"SubmissionCriterion(id={self.id!r}, submission_type={self.submission_type!r}, min_transactions={self.min_transactions!r}, keywords={self.keywords!r}, all_required={self.all_required!r})"
 
 
-class ProcessedPost(Base):
-    """Used as a cache to keep track of already-processed posts, to prevent a restart from triggering another notification."""
+class ProcessedSubmission(Base):
+    """Used as a cache to keep track of already-processed submissions, to prevent a restart of the app from triggering another notification."""
 
-    __tablename__ = "processed_post"
+    __tablename__ = "processed_submission"
 
     id: Mapped[str] = mapped_column(primary_key=True, autoincrement=False)
     date_processed: Mapped[datetime] = mapped_column(default=datetime.now)
 
     def __repr__(self) -> str:
-        return f"ProcessedPost(id={self.id!r}, date_processed={self.date_processed!r})"
+        return f"ProcessedSubmission(id={self.id!r}, date_processed={self.date_processed!r})"

@@ -17,7 +17,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.create_table(
-        "processed_post",
+        "processed_submission",
         sa.Column("id", sa.String(), autoincrement=False, nullable=False),
         sa.Column("date_processed", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
@@ -52,4 +52,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("keyword")
     op.drop_table("submission_criterion")
-    op.drop_table("processed_post")
+    op.drop_table("processed_submission")
