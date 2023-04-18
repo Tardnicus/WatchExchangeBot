@@ -13,12 +13,14 @@ import requests
 import yaml
 from praw import Reddit
 from praw.models import Submission
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from models import SubmissionCriterion, Keyword, SubmissionType
+from models import SubmissionCriterion, Keyword, SubmissionType, ProcessedPost
 
 # TODO: Extract URL string
-engine = create_engine("sqlite:///test.db", echo=True)
+engine = create_engine("sqlite:///test.db")
 
 
 def __get_logger() -> logging.Logger:
@@ -130,6 +132,14 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
         LOGGER.debug(f"  Title: {submission.title}")
         LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
+        LOGGER.debug("  Checking is submission has been processed...")
+        with Session(engine) as session:
+            if session.scalar(
+                select(ProcessedPost).where(ProcessedPost.id == submission.id)
+            ):
+                LOGGER.info("  Submission has already been processed! Skipping...")
+                continue
+
         # This is a new post, so we have to analyze it with respect to the criteria.
         for criterion in config.criteria:
             LOGGER.info(f"  Checking {criterion}...")
@@ -139,6 +149,17 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
                 callback(reddit, submission, config.webhookUrl, config.mentionString)
             else:
                 LOGGER.info("    Did not match")
+
+        with Session(engine) as session:
+            LOGGER.debug("  Adding submission to cache...")
+            try:
+                session.add(ProcessedPost(id=submission.id))
+                session.commit()
+            except IntegrityError as error:
+                LOGGER.error(
+                    f"  Failed to save to database! Submission with id ({submission.id}) is already in cache!"
+                )
+                LOGGER.debug("  Exception info:", exc_info=error)
 
 
 def post_discord_message(
