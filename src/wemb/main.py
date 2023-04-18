@@ -31,7 +31,6 @@ def main():
     signal.signal(signal.SIGINT, __signal_handler)
     signal.signal(signal.SIGTERM, __signal_handler)
 
-    # run_core(args)
     run_bot()
 
 

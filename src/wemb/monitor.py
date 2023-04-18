@@ -54,7 +54,7 @@ engine = get_engine()
 
 RE_TRANSACTIONS = re.compile(r"^\d+")
 SUBREDDIT_WATCHEXCHANGE = "watchexchange"
-LOGGER = get_logger("wemb.core")
+LOGGER = get_logger("wemb.monitor")
 
 
 def get_permalink(reddit: Reddit, submission: Submission):
@@ -152,7 +152,7 @@ def post_discord_message(
     LOGGER.debug(f"Response: {response}")
 
 
-def run_core(args: argparse.Namespace):
+def run_monitor(args: argparse.Namespace):
     # Dependent on a praw.ini file containing client_id, client_secret, and user_agent.
     reddit = praw.Reddit(read_only=True)
 
