@@ -50,8 +50,6 @@ class ProgramConfiguration:
         self.mentionString = contents["callback"]["mentionString"]
 
 
-engine = get_engine()
-
 RE_TRANSACTIONS = re.compile(r"^\d+")
 SUBREDDIT_WATCHEXCHANGE = "watchexchange"
 LOGGER = get_logger("wemb.monitor")
@@ -106,7 +104,7 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
         LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
         LOGGER.debug("  Checking if submission has been processed...")
-        with Session(engine) as session:
+        with Session(get_engine()) as session:
             if session.scalar(
                 select(ProcessedSubmission).where(
                     ProcessedSubmission.id == submission.id
@@ -125,7 +123,7 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
             else:
                 LOGGER.info("    Did not match")
 
-        with Session(engine) as session:
+        with Session(get_engine()) as session:
             LOGGER.debug("  Adding submission to cache...")
             try:
                 session.add(ProcessedSubmission(id=submission.id))

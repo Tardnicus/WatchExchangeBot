@@ -1,8 +1,11 @@
 import logging
 import os
 import sys
+from typing import Optional
 
 from sqlalchemy import Engine, create_engine
+
+ENGINE: Optional[Engine] = None
 
 
 def get_logger(package_name: str) -> logging.Logger:
@@ -32,5 +35,12 @@ def get_logger(package_name: str) -> logging.Logger:
 
 
 def get_engine() -> Engine:
-    # TODO: Extract URL string
-    return create_engine("sqlite:///test.db")
+    """Gets the database engine used by this program, and creates it if necessary."""
+    global ENGINE
+
+    if ENGINE is None:
+        # TODO: Extract URL string
+        ENGINE = create_engine("sqlite:///test.db")
+        get_logger("wemb.common").info("created engine")
+
+    return ENGINE
