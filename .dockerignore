@@ -1,0 +1,15 @@
+**/.gitignore
+
+**/venv
+**/__pycache__
+
+**/.env
+**/.env-example
+**/*.yaml
+**/*.ini
+**/*.ini.example
+
+**/*.db
+**/*.sqlite3
+
+!**/alembic.ini
