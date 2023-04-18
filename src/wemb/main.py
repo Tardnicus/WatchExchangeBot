@@ -132,7 +132,7 @@ def process_submissions(reddit: praw.Reddit, args, callback=None):
         LOGGER.debug(f"  Title: {submission.title}")
         LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
-        LOGGER.debug("  Checking is submission has been processed...")
+        LOGGER.debug("  Checking if submission has been processed...")
         with Session(engine) as session:
             if session.scalar(
                 select(ProcessedSubmission).where(
