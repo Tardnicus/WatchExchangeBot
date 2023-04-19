@@ -3,8 +3,8 @@ import signal
 import sys
 from time import sleep
 
+from bot import run_bot
 from common import get_logger
-from src.wemb.bot import run_bot
 
 LOGGER = get_logger("wemb.main")
 
