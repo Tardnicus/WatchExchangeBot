@@ -4,3 +4,4 @@ PyYAML==6.0
 SQLAlchemy==2.0.9
 alembic==1.10.3
 discord==2.2.2
+ConfigArgParse==1.5.3
