@@ -1,3 +1,4 @@
+import asyncio
 from argparse import Namespace
 from typing import Literal, List, Optional
 
@@ -18,8 +19,10 @@ from sqlalchemy.orm import Session
 
 from common import get_engine, get_logger
 from models import SubmissionType, SubmissionCriterion, Keyword
+from monitor import run_monitor
 
 PROGRAM_ARGS: Optional[Namespace] = None
+MONITOR_TASK: Optional[asyncio.Task] = None
 LOGGER = get_logger("wemb.bot")
 
 intents = discord.Intents.default()
@@ -30,10 +33,18 @@ bot = Bot(command_prefix="%", intents=intents)
 
 @bot.event
 async def on_ready():
+    global MONITOR_TASK
+
     LOGGER.debug("Adding cogs...")
     await bot.add_cog(Searches())
 
-    LOGGER.info("Ready!")
+    LOGGER.info("Starting Monitor...")
+    MONITOR_TASK = asyncio.Task(
+        run_monitor(PROGRAM_ARGS),
+        name="monitor",
+    )
+
+    LOGGER.info("Done!")
 
 
 @bot.command()
