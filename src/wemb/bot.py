@@ -39,7 +39,7 @@ async def on_ready():
     await bot.add_cog(Searches())
 
     LOGGER.info("Starting Monitor...")
-    MONITOR_TASK = asyncio.Task(
+    MONITOR_TASK = asyncio.create_task(
         run_monitor(PROGRAM_ARGS),
         name="monitor",
     )
