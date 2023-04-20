@@ -1,11 +1,17 @@
 import logging
-import os
 import sys
 from typing import Optional
 
 from sqlalchemy import Engine, create_engine
 
 ENGINE: Optional[Engine] = None
+LOG_LEVEL: Optional[str] = None
+
+
+def set_log_level(level: str):
+    global LOG_LEVEL
+
+    LOG_LEVEL = level
 
 
 def get_logger(package_name: str) -> logging.Logger:
@@ -20,16 +26,8 @@ def get_logger(package_name: str) -> logging.Logger:
         style="{",
     )
 
-    # Get log level from env var
-    log_level = os.environ.get("WEMB_LOGLEVEL") or logging.DEBUG
-
     logger = logging.getLogger(package_name)
-
-    try:
-        logger.setLevel(log_level)
-    except ValueError:
-        logger.setLevel(logging.DEBUG)
-        logger.warning(f"Invalid WEMB_LOGLEVEL ({log_level})! Defaulting to DEBUG...")
+    logger.setLevel(LOG_LEVEL)
 
     return logger
 

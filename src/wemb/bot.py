@@ -1,5 +1,5 @@
-import os
-from typing import Literal, List
+from argparse import Namespace
+from typing import Literal, List, Optional
 
 import discord
 from discord import Interaction, app_commands, InteractionResponse
@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from common import get_engine, get_logger
 from models import SubmissionType, SubmissionCriterion, Keyword
 
+PROGRAM_ARGS: Optional[Namespace] = None
 LOGGER = get_logger("wemb.bot")
 
 intents = discord.Intents.default()
@@ -167,5 +168,9 @@ class Searches(
         await interaction.edit_original_response(content="Successfully deleted!")
 
 
-def run_bot():
-    bot.run(os.environ.get("WEMB_DISCORD_API_TOKEN"))
+def run_bot(args: Namespace):
+    global PROGRAM_ARGS
+
+    # We will need access to these args when instantiating the PRAW instance
+    PROGRAM_ARGS = args
+    bot.run(args.discord_api_token)
