@@ -20,5 +20,3 @@ COPY --chown=python:python --chmod=700 ./entrypoint.sh /app
 
 # A config.yaml mount point is expected, as well as env vars for PRAW
 ENTRYPOINT [ "./entrypoint.sh" ]
-
-
