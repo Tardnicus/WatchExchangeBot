@@ -7,7 +7,7 @@ from typing import Optional
 import configargparse
 
 from bot import run_bot
-from common import get_logger, set_log_level
+from common import get_logger
 
 LOGGER: Optional[Logger] = None
 
@@ -64,25 +64,9 @@ def main():
         help="User agent, used for identification with Reddit",
         env_var="PRAW_USER_AGENT",
     )
-    parser.add_argument(
-        "-l",
-        "--log-level",
-        default="INFO",
-        help="The logging level of the application. Must be one of the levels specified in https://docs.python.org/3.10/library/logging.html#logging-levels.",
-        choices=[
-            "CRITICAL",
-            "ERROR",
-            "WARNING",
-            "INFO",
-            "DEBUG",
-            "NOTSET",
-        ],
-        env_var="WEMB_LOGLEVEL",
-    )
 
     args = parser.parse_args()
 
-    set_log_level(args.log_level)
     LOGGER = get_logger("wemb.main")
 
     LOGGER.info("Initialized!")
