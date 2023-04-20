@@ -2,10 +2,9 @@ import re
 from argparse import Namespace
 from typing import List
 
-import praw
 import requests
-from praw import Reddit
-from praw.models import Submission
+from asyncpraw import Reddit
+from asyncpraw.models import Submission
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -49,13 +48,15 @@ def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bo
     return True
 
 
-def process_submissions(reddit: praw.Reddit, args, callback=None):
+async def process_submissions(reddit: Reddit, args, callback=None):
     """Checks for new submissions in the subreddit and matches them against the criteria. Blocks "forever", or until a praw exception occurs. It's expected for the caller to re-call this if necessary"""
 
     LOGGER.info("Started Stream!")
 
+    subreddit = await reddit.subreddit(SUBREDDIT_WATCHEXCHANGE)
+
     submission: Submission
-    for submission in reddit.subreddit(SUBREDDIT_WATCHEXCHANGE).stream.submissions():
+    async for submission in subreddit.stream.submissions():
         LOGGER.info("")
         LOGGER.info(f"Incoming submission ({submission.id}):")
         LOGGER.debug(f"  URL: {get_permalink(reddit, submission)}")
@@ -118,12 +119,14 @@ def post_discord_message(
     LOGGER.debug(f"Response: {response}")
 
 
-def run_monitor(args: Namespace):
-    reddit = praw.Reddit(
+async def run_monitor(args: Namespace):
+    LOGGER.info("Initialized!")
+
+    reddit = Reddit(
         client_id=args.praw_client_id,
         client_secret=args.praw_client_secret,
         user_agent=args.praw_user_agent,
         read_only=True,
     )
 
-    process_submissions(reddit, args, callback=post_discord_message)
+    await process_submissions(reddit, args, callback=post_discord_message)
