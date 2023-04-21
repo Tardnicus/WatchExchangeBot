@@ -21,15 +21,15 @@ def get_logger(package_name: str) -> logging.Logger:
     )
 
     # Get log level from env var
-    log_level = os.environ.get("WEMB_LOGLEVEL") or logging.DEBUG
+    log_level = os.environ.get("WEMB_LOGLEVEL") or logging.INFO
 
     logger = logging.getLogger(package_name)
 
     try:
         logger.setLevel(log_level)
     except ValueError:
-        logger.setLevel(logging.DEBUG)
-        logger.warning(f"Invalid WEMB_LOGLEVEL ({log_level})! Defaulting to DEBUG...")
+        logger.setLevel(logging.INFO)
+        logger.warning(f"Invalid WEMB_LOGLEVEL ({log_level})! Defaulting to INFO...")
 
     return logger
 
