@@ -1,6 +1,7 @@
 import asyncio
+import signal
 from argparse import Namespace
-from typing import Literal, List, Optional
+from typing import Literal, List, Optional, Coroutine
 
 import discord
 from discord import Interaction, app_commands, InteractionResponse
@@ -19,10 +20,11 @@ from sqlalchemy.orm import Session
 
 from common import get_engine, get_logger
 from models import SubmissionType, SubmissionCriterion, Keyword
+from monitor import run_monitor
 
-PROGRAM_ARGS: Optional[Namespace] = None
-MONITOR_TASK: Optional[asyncio.Task] = None
 LOGGER = get_logger("wemb.bot")
+
+MONITOR_COROUTINE: Optional[Coroutine] = None
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -32,18 +34,22 @@ bot = Bot(command_prefix="%", intents=intents)
 
 @bot.event
 async def on_ready():
-    global MONITOR_TASK
+    global MONITOR_COROUTINE
 
+    LOGGER.info("Logged in!")
     LOGGER.debug("Adding cogs...")
     await bot.add_cog(Searches())
 
-    # LOGGER.info("Starting Monitor...")
-    # MONITOR_TASK = asyncio.create_task(
-    #     run_monitor(PROGRAM_ARGS),
-    #     name="monitor",
-    # )
+    LOGGER.info("Starting monitor...")
 
-    LOGGER.info("Done!")
+    if MONITOR_COROUTINE is not None:
+        asyncio.get_event_loop().create_task(MONITOR_COROUTINE, name="monitor")
+    else:
+        LOGGER.critical(
+            "MONITOR_COROUTINE was not initialized properly! PRAW will NOT start."
+        )
+
+    LOGGER.info("Ready!")
 
 
 @bot.command()
@@ -178,9 +184,46 @@ class Searches(
         await interaction.edit_original_response(content="Successfully deleted!")
 
 
-def run_bot(args: Namespace):
-    global PROGRAM_ARGS
+async def __shutdown(sig: signal.Signals, loop: asyncio.AbstractEventLoop):
+    """When called, shuts down all tasks from the event loop (Discord, PRAW, and any hanging network requests), and stops the event loop gracefully."""
 
-    # We will need access to these args when instantiating the PRAW instance
-    PROGRAM_ARGS = args
-    bot.run(args.discord_api_token)
+    LOGGER.debug(f"Signal {sig.name} was caught!")
+    LOGGER.info("Shutdown called!")
+
+    LOGGER.debug("Getting all tasks...")
+    tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+    LOGGER.debug(f"\tTasks: {tasks}")
+
+    LOGGER.info(f"Cancelling {len(tasks)} tasks...")
+    [task.cancel() for task in tasks]
+
+    LOGGER.debug("Awaiting shutdown...")
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+    LOGGER.info("Stopping event loop...")
+    loop.stop()
+
+
+def run_bot(args: Namespace):
+    global MONITOR_COROUTINE
+
+    loop = asyncio.get_event_loop()
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, lambda sig=sig: asyncio.create_task(__shutdown(sig, loop)))
+
+    async def bot_runner():
+        async with bot:
+            await bot.start(args.discord_api_token, reconnect=True)
+
+    # Save PRAW coroutine to run in on_ready()
+    MONITOR_COROUTINE = run_monitor(args)
+
+    # TODO: Set up logging
+
+    try:
+        loop.create_task(bot_runner(), name="bot")
+        loop.run_forever()
+    finally:
+        loop.close()
+        LOGGER.info("Shutting down...")
