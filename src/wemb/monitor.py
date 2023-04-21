@@ -122,11 +122,14 @@ def post_discord_message(
 async def run_monitor(args: Namespace):
     LOGGER.info("Initialized!")
 
-    reddit = Reddit(
+    async with Reddit(
         client_id=args.praw_client_id,
         client_secret=args.praw_client_secret,
         user_agent=args.praw_user_agent,
         read_only=True,
-    )
+    ) as reddit:
 
-    await process_submissions(reddit, args, callback=post_discord_message)
+        # Handle disconnections that would otherwise cause this outer function to exit
+        while True:
+            LOGGER.info("Starting stream...")
+            await process_submissions(reddit, args, callback=post_discord_message)
