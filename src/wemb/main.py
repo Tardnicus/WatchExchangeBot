@@ -38,6 +38,13 @@ def main():
         env_var="WEMB_DISCORD_API_TOKEN",
     )
     parser.add_argument(
+        "--allow-dirty-shutdown",
+        default=False,
+        action="store_true",
+        help="Allows dirty/messy shutdowns when asyncio event handlers are not supported.",
+        env_var="WEMB_ALLOW_DIRTY_SHUTDOWN",
+    )
+    parser.add_argument(
         "--praw-client-id",
         required=True,
         help="Client ID, used for authenticating with Reddit",

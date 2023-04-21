@@ -1,5 +1,6 @@
 import asyncio
 import signal
+import sys
 from argparse import Namespace
 from typing import Literal, List, Optional, Coroutine
 
@@ -204,13 +205,36 @@ async def __shutdown(sig: signal.Signals, loop: asyncio.AbstractEventLoop):
     loop.stop()
 
 
+def __dirty_shutdown(sig_num: int, frame):
+    """When called, schedules a __shutdown() coroutine on the event loop. Used as a (non-asyncio) signal handler."""
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(__shutdown(signal.Signals(sig_num), loop))
+
+
 def run_bot(args: Namespace):
     global MONITOR_COROUTINE
 
     loop = asyncio.get_event_loop()
 
-    for sig in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(sig, lambda sig=sig: asyncio.create_task(__shutdown(sig, loop)))
+    try:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(
+                sig, lambda sig=sig: asyncio.create_task(__shutdown(sig, loop))
+            )
+    except NotImplementedError:
+        LOGGER.warning(
+            "asyncio signals are NOT properly supported on this platform! Python's provided signal handler will be used instead, but this may cause objects to not be closed properly!"
+        )
+
+        if not args.allow_dirty_shutdown:
+            LOGGER.error(
+                "Please pass --allow-dirty-shutdown or set the WEMB_ALLOW_DIRTY_SHUTDOWN env var to accept these conditions."
+            )
+            sys.exit(1)
+
+        signal.signal(signal.SIGINT, __dirty_shutdown)
+        signal.signal(signal.SIGTERM, __dirty_shutdown)
 
     async def bot_runner():
         async with bot:
