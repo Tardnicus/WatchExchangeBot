@@ -56,6 +56,8 @@ async def on_ready():
 @bot.command()
 @commands.is_owner()
 async def sync(ctx: Context, target: Literal["global", "here"]):
+    LOGGER.debug(f"Received command: %sync {target}")
+
     if target == "global":
         synced_commands = await ctx.bot.tree.sync()
         await ctx.send(f"Synced {len(synced_commands)} command(s) globally.")
@@ -72,7 +74,7 @@ async def sync(ctx: Context, target: Literal["global", "here"]):
 
     # noinspection PyUnboundLocalVariable
     # The 'else' path will never be taken based on validation rules so synced_commands should always have a value.
-    LOGGER.debug(f"Synced the following commands:\n\t{synced_commands!s}")
+    LOGGER.debug(f"\tSynced the following commands:\n\t{synced_commands!s}")
 
 
 @sync.error
@@ -94,6 +96,7 @@ async def sync_error(ctx: Context, error: CommandError):
 
 @bot.hybrid_command(description="Pings the bot to check if it's alive")
 async def ping(ctx: Context):
+    LOGGER.debug(f"Received hybrid command: /ping")
     await ctx.send("pong")
 
 
@@ -124,6 +127,11 @@ class Searches(
         min_transactions: Range[int, 1] = 5,
     ):
         """Add a search for a particular item on the subreddit"""
+
+        LOGGER.debug(
+            f"Received slash command: /searches add {submission_type} {keywords} {all_required} {min_transactions}"
+        )
+
         # noinspection PyTypeChecker
         response: InteractionResponse[Bot] = interaction.response
 
@@ -144,6 +152,9 @@ class Searches(
     @app_commands.command(name="list")
     async def list(self, interaction: Interaction[Bot]):
         """Lists all current search criteria"""
+
+        LOGGER.debug("Received slash command: /searches list")
+
         # noinspection PyTypeChecker
         response: InteractionResponse[Bot] = interaction.response
 
@@ -163,6 +174,9 @@ class Searches(
     )
     async def delete(self, interaction: Interaction[Bot], search_id: Range[int, 0]):
         """Remove a specified search criteria by ID"""
+
+        LOGGER.debug(f"Received slash command: /searches delete {search_id}")
+
         # noinspection PyTypeChecker
         response: InteractionResponse[Bot] = interaction.response
 
