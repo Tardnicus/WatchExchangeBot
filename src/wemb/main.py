@@ -1,7 +1,4 @@
-import signal
-import sys
 from logging import Logger
-from time import sleep
 from typing import Optional
 
 import configargparse
@@ -10,12 +7,6 @@ from bot import run_bot
 from common import get_logger
 
 LOGGER: Optional[Logger] = None
-
-
-def __signal_handler(signum, frame):
-    LOGGER.info("SIGINT/SIGTERM Captured! Exiting...")
-    sleep(1)
-    sys.exit(0)
 
 
 def main():
@@ -70,11 +61,6 @@ def main():
     LOGGER = get_logger("wemb.main")
 
     LOGGER.info("Initialized!")
-
-    # Set signal handler for Ctrl+C and SIGTERM
-    # TODO: Improve signal handling
-    signal.signal(signal.SIGINT, __signal_handler)
-    signal.signal(signal.SIGTERM, __signal_handler)
 
     # Run main bot process. After ready, it spawns an event loop for submission scanning.
     run_bot(args)

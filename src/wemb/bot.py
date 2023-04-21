@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 
 from common import get_engine, get_logger
 from models import SubmissionType, SubmissionCriterion, Keyword
-from monitor import run_monitor
 
 PROGRAM_ARGS: Optional[Namespace] = None
 MONITOR_TASK: Optional[asyncio.Task] = None
@@ -38,11 +37,11 @@ async def on_ready():
     LOGGER.debug("Adding cogs...")
     await bot.add_cog(Searches())
 
-    LOGGER.info("Starting Monitor...")
-    MONITOR_TASK = asyncio.create_task(
-        run_monitor(PROGRAM_ARGS),
-        name="monitor",
-    )
+    # LOGGER.info("Starting Monitor...")
+    # MONITOR_TASK = asyncio.create_task(
+    #     run_monitor(PROGRAM_ARGS),
+    #     name="monitor",
+    # )
 
     LOGGER.info("Done!")
 
