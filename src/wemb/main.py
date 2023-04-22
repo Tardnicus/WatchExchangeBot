@@ -31,18 +31,22 @@ def main():
         help="A mention string in the form of <@&role_id>. Use '<@&role_id>' for roles, and '<@user_id>' for specific users.",
         env_var="WEMB_MENTION_STRING",
     )
-    parser.add_argument(
-        "--discord-api-token",
-        required=True,
-        help="A discord API token, used for authenticating the bot process.",
-        env_var="WEMB_DISCORD_API_TOKEN",
-    )
+
+    # Program settings
     parser.add_argument(
         "--allow-dirty-shutdown",
         default=False,
         action="store_true",
         help="Allows dirty/messy shutdowns when asyncio event handlers are not supported.",
         env_var="WEMB_ALLOW_DIRTY_SHUTDOWN",
+    )
+
+    # Authentication info
+    parser.add_argument(
+        "--discord-api-token",
+        required=True,
+        help="Discord API token, used for authenticating the bot process.",
+        env_var="DISCORD_API_TOKEN",
     )
     parser.add_argument(
         "--praw-client-id",
@@ -61,6 +65,14 @@ def main():
         required=True,
         help="User agent, used for identification with Reddit",
         env_var="PRAW_USER_AGENT",
+    )
+
+    # Log levels
+    parser.add_argument(
+        "--wemb-log-level",
+        default=logging.INFO,
+        help="Logging level of this program. Defaults to INFO",
+        env_var="WEMB_LOGLEVEL",
     )
 
     args = parser.parse_args()
