@@ -148,13 +148,22 @@ class Searches(
 
         session: AsyncSession
         async with DB_SESSION() as session:
+            user = await session.get(User, interaction.user.id)
+
+            if user is None:
+                user = User(id=interaction.user.id)
+                session.add(user)
+
             criterion = SubmissionCriterion(
                 submission_type=submission_type,
                 keywords=keywords,
                 all_required=all_required,
                 min_transactions=min_transactions,
+                owner=user,
+                channel_id=interaction.channel_id,
             )
             session.add(criterion)
+
             await session.commit()
 
             await interaction.edit_original_response(content=f"Created!\n{criterion!r}")
