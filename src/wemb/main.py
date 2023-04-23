@@ -39,6 +39,34 @@ def main():
         help="Allows dirty/messy shutdowns when asyncio event handlers are not supported.",
         env_var="WEMB_ALLOW_DIRTY_SHUTDOWN",
     )
+    parser.add_argument(
+        "-C",
+        "--disable-log-colors",
+        default=False,
+        action="store_true",
+        help="Disables log output coloring",
+        env_var="WEMB_DISABLE_LOG_COLORS",
+    )
+
+    # Log levels
+    parser.add_argument(
+        "--wemb-log-level",
+        default=logging.INFO,
+        help="Logging level of this program. Defaults to INFO",
+        env_var="WEMB_LOGLEVEL",
+    )
+    parser.add_argument(
+        "--discord-log-level",
+        default=logging.INFO,
+        help="Logging level of the used discord library. Defaults to INFO.",
+        env_var="DISCORD_LOGLEVEL",
+    )
+    parser.add_argument(
+        "--praw-log-level",
+        default=logging.INFO,
+        help="Logging level of the used asyncpraw library. Defaults to INFO",
+        env_var="PRAW_LOGLEVEL",
+    )
 
     # Authentication info
     parser.add_argument(
@@ -66,33 +94,27 @@ def main():
         env_var="PRAW_USER_AGENT",
     )
 
-    # Log levels
-    parser.add_argument(
-        "--wemb-log-level",
-        default=logging.INFO,
-        help="Logging level of this program. Defaults to INFO",
-        env_var="WEMB_LOGLEVEL",
-    )
-    parser.add_argument(
-        "--discord-log-level",
-        default=logging.INFO,
-        help="Logging level of the used discord library. Defaults to INFO.",
-        env_var="DISCORD_LOGLEVEL",
-    )
-    parser.add_argument(
-        "--praw-log-level",
-        default=logging.INFO,
-        help="Logging level of the used asyncpraw library. Defaults to INFO",
-        env_var="PRAW_LOGLEVEL",
-    )
-
     args = parser.parse_args()
 
     # Set up logging for all package roots available.
-    setup_logging("wemb", log_level=args.wemb_log_level)
-    setup_logging("discord", log_level=args.discord_log_level)
-    setup_logging("asyncpraw", log_level=args.praw_log_level)
-    setup_logging("asyncprawcore", log_level=args.praw_log_level)
+    setup_logging(
+        "wemb", log_level=args.wemb_log_level, disable_color=args.disable_log_colors
+    )
+    setup_logging(
+        "discord",
+        log_level=args.discord_log_level,
+        disable_color=args.disable_log_colors,
+    )
+    setup_logging(
+        "asyncpraw",
+        log_level=args.praw_log_level,
+        disable_color=args.disable_log_colors,
+    )
+    setup_logging(
+        "asyncprawcore",
+        log_level=args.praw_log_level,
+        disable_color=args.disable_log_colors,
+    )
 
     LOGGER.info("Initialized!")
 
