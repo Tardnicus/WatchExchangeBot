@@ -4,3 +4,4 @@ SQLAlchemy==2.0.10
 alembic==1.10.3
 discord==2.2.2
 ConfigArgParse==1.5.3
+asyncpg==0.27.0
