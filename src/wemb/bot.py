@@ -18,15 +18,22 @@ from discord.ext.commands import (
     GroupCog,
 )
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    AsyncEngine,
+    async_sessionmaker,
+    AsyncSession,
+)
 
-from common import get_engine
 from models import SubmissionType, SubmissionCriterion, Keyword
 from monitor import run_monitor
 
 LOGGER = logging.getLogger("wemb.bot")
 
 MONITOR_COROUTINE: Optional[Coroutine] = None
+
+DB_ENGINE: Optional[AsyncEngine] = None
+DB_SESSION: Optional[async_sessionmaker[AsyncEngine]] = None
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -138,7 +145,8 @@ class Searches(
 
         await response.send_message("Creating...")
 
-        with Session(get_engine()) as session:
+        session: AsyncSession
+        async with DB_SESSION() as session:
             criterion = SubmissionCriterion(
                 submission_type=submission_type,
                 keywords=keywords,
@@ -146,7 +154,7 @@ class Searches(
                 min_transactions=min_transactions,
             )
             session.add(criterion)
-            session.commit()
+            await session.commit()
 
             await interaction.edit_original_response(content=f"Created!\n{criterion!r}")
 
@@ -161,11 +169,12 @@ class Searches(
 
         await response.send_message("Please wait...")
 
-        with Session(get_engine()) as session:
+        session: AsyncSession
+        async with DB_SESSION() as session:
             await interaction.edit_original_response(
                 content="Search criteria:\n"
                 + "\t\n".join(
-                    (str(c) for c in session.scalars(select(SubmissionCriterion)))
+                    (str(c) for c in await session.scalars(select(SubmissionCriterion)))
                 )
             )
 
@@ -183,8 +192,9 @@ class Searches(
 
         await response.send_message("Please wait...")
 
-        with Session(get_engine()) as session:
-            criterion: SubmissionCriterion = session.scalar(
+        session: AsyncSession
+        async with DB_SESSION() as session:
+            criterion: SubmissionCriterion = await session.scalar(
                 select(SubmissionCriterion).where(SubmissionCriterion.id == search_id)
             )
 
@@ -194,8 +204,8 @@ class Searches(
                 )
                 return
 
-            session.delete(criterion)
-            session.commit()
+            await session.delete(criterion)
+            await session.commit()
 
         await interaction.edit_original_response(content="Successfully deleted!")
 
@@ -205,6 +215,10 @@ async def __shutdown(sig: signal.Signals, loop: asyncio.AbstractEventLoop):
 
     LOGGER.debug(f"Signal {sig.name} was caught!")
     LOGGER.info("Shutdown called!")
+
+    LOGGER.info("Disposing database engine...")
+    if DB_ENGINE is not None:
+        await DB_ENGINE.dispose()
 
     LOGGER.debug("Getting all tasks...")
     tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
@@ -228,6 +242,8 @@ def __dirty_shutdown(sig_num: int, frame):
 
 
 def run_bot(args: Namespace):
+    global DB_ENGINE
+    global DB_SESSION
     global MONITOR_COROUTINE
 
     loop = asyncio.get_event_loop()
@@ -251,12 +267,16 @@ def run_bot(args: Namespace):
         signal.signal(signal.SIGINT, __dirty_shutdown)
         signal.signal(signal.SIGTERM, __dirty_shutdown)
 
+    # Disposal is done is the shutdown hook
+    DB_ENGINE = create_async_engine(args.db_connection_string)
+    DB_SESSION = async_sessionmaker(DB_ENGINE, expire_on_commit=True)
+
     async def bot_runner():
         async with bot:
             await bot.start(args.discord_api_token, reconnect=True)
 
     # Save PRAW coroutine to run in on_ready()
-    MONITOR_COROUTINE = run_monitor(args)
+    MONITOR_COROUTINE = run_monitor(args, session_factory=DB_SESSION)
 
     try:
         loop.create_task(bot_runner(), name="bot")

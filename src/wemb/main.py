@@ -94,6 +94,14 @@ def main():
         env_var="PRAW_USER_AGENT",
     )
 
+    # Database related
+    parser.add_argument(
+        "--db-connection-string",
+        required=True,
+        help="Database connection string. Currently only supports async postgresql",
+        env_var="DB_CONNECTION_STRING",
+    )
+
     args = parser.parse_args()
 
     # Set up logging for all package roots available.

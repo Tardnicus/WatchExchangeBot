@@ -3,11 +3,8 @@ import sys
 from enum import Enum
 from typing import Optional, Dict, Literal
 
-from sqlalchemy import Engine, create_engine
-
 LOGGER = logging.getLogger("wemb.common")
 
-ENGINE: Optional[Engine] = None
 LOG_HANDLERS: Dict[str, Optional[logging.Handler]] = {"color": None, "basic": None}
 
 
@@ -140,20 +137,3 @@ def setup_logging(
     except ValueError:
         logger.setLevel(logging.INFO)
         logger.warning(f"Invalid log_level ({log_level})! Defaulting to INFO...")
-
-
-def get_engine() -> Engine:
-    """
-    Gets the database engine used by this program, and creates it if necessary.
-
-    :return: A SQLAlchemy :class:`Engine`, used to create sessions for the database used by this program.
-    """
-
-    global ENGINE
-
-    if ENGINE is None:
-        # TODO: Extract URL string
-        ENGINE = create_engine("sqlite:///test.db")
-        LOGGER.debug("Created engine...")
-
-    return ENGINE

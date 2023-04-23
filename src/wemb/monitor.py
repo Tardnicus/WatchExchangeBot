@@ -1,17 +1,18 @@
 import logging
 import re
 from argparse import Namespace
-from typing import List
+from typing import List, Optional
 
 import requests
 from asyncpraw import Reddit
 from asyncpraw.models import Submission
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
 
-from common import get_engine
 from models import SubmissionCriterion, ProcessedSubmission
+
+DB_SESSION: Optional[async_sessionmaker[AsyncEngine]] = None
 
 RE_TRANSACTIONS = re.compile(r"^\d+")
 SUBREDDIT_WATCHEXCHANGE = "watchexchange"
@@ -65,8 +66,10 @@ async def process_submissions(reddit: Reddit, args, callback=None):
         LOGGER.debug(f"  Flair: {submission.author_flair_text}")
 
         LOGGER.debug("  Checking if submission has been processed...")
-        with Session(get_engine()) as session:
-            if session.scalar(
+
+        session: AsyncSession
+        async with DB_SESSION() as session:
+            if await session.scalar(
                 select(ProcessedSubmission).where(
                     ProcessedSubmission.id == submission.id
                 )
@@ -74,11 +77,12 @@ async def process_submissions(reddit: Reddit, args, callback=None):
                 LOGGER.info("  Submission has already been processed! Skipping...")
                 continue
 
-        with Session(get_engine()) as session:
+        session: AsyncSession
+        async with DB_SESSION() as session:
+            result = await session.scalars(select(SubmissionCriterion))
+
             # noinspection PyTypeChecker
-            criteria: List[SubmissionCriterion] = session.scalars(
-                select(SubmissionCriterion)
-            ).all()
+            criteria: List[SubmissionCriterion] = result.all()
 
             if len(criteria) == 0:
                 LOGGER.warning("  No criteria loaded, nothing to do.")
@@ -93,16 +97,17 @@ async def process_submissions(reddit: Reddit, args, callback=None):
                 else:
                     LOGGER.info("    Did not match")
 
-        with Session(get_engine()) as session:
+        session: AsyncSession
+        async with DB_SESSION() as session:
             LOGGER.debug("  Adding submission to cache...")
             try:
                 session.add(ProcessedSubmission(id=submission.id))
-                session.commit()
+                await session.commit()
             except IntegrityError as error:
                 LOGGER.error(
                     f"  Failed to save to database! Submission with id ({submission.id}) is already in cache!"
                 )
-                LOGGER.debug("  Exception info:", exc_info=error)
+                LOGGER.error("  Exception info:", exc_info=error)
 
 
 def post_discord_message(
@@ -120,7 +125,13 @@ def post_discord_message(
     LOGGER.debug(f"Response: {response}")
 
 
-async def run_monitor(args: Namespace):
+async def run_monitor(
+    args: Namespace, *, session_factory: async_sessionmaker[AsyncSession]
+):
+    global DB_SESSION
+
+    DB_SESSION = session_factory
+
     LOGGER.info("Initialized!")
 
     async with Reddit(
