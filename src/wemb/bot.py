@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import signal
 import sys
 from argparse import Namespace
@@ -19,11 +20,11 @@ from discord.ext.commands import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from common import get_engine, get_logger
+from common import get_engine
 from models import SubmissionType, SubmissionCriterion, Keyword
 from monitor import run_monitor
 
-LOGGER = get_logger("wemb.bot")
+LOGGER = logging.getLogger("wemb.bot")
 
 MONITOR_COROUTINE: Optional[Coroutine] = None
 
@@ -256,8 +257,6 @@ def run_bot(args: Namespace):
 
     # Save PRAW coroutine to run in on_ready()
     MONITOR_COROUTINE = run_monitor(args)
-
-    # TODO: Set up logging
 
     try:
         loop.create_task(bot_runner(), name="bot")

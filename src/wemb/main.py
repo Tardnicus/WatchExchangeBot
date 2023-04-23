@@ -1,12 +1,11 @@
-from logging import Logger
-from typing import Optional
+import logging
 
 import configargparse
 
 from bot import run_bot
-from common import get_logger
+from common import setup_logging
 
-LOGGER: Optional[Logger] = None
+LOGGER = logging.getLogger("wemb.main")
 
 
 def main():
@@ -74,10 +73,26 @@ def main():
         help="Logging level of this program. Defaults to INFO",
         env_var="WEMB_LOGLEVEL",
     )
+    parser.add_argument(
+        "--discord-log-level",
+        default=logging.INFO,
+        help="Logging level of the used discord library. Defaults to INFO.",
+        env_var="DISCORD_LOGLEVEL",
+    )
+    parser.add_argument(
+        "--praw-log-level",
+        default=logging.INFO,
+        help="Logging level of the used asyncpraw library. Defaults to INFO",
+        env_var="PRAW_LOGLEVEL",
+    )
 
     args = parser.parse_args()
 
-    LOGGER = get_logger("wemb.main")
+    # Set up logging for all package roots available.
+    setup_logging("wemb", log_level=args.wemb_log_level)
+    setup_logging("discord", log_level=args.discord_log_level)
+    setup_logging("asyncpraw", log_level=args.praw_log_level)
+    setup_logging("asyncprawcore", log_level=args.praw_log_level)
 
     LOGGER.info("Initialized!")
 

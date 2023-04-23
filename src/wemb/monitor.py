@@ -1,3 +1,4 @@
+import logging
 import re
 from argparse import Namespace
 from typing import List
@@ -9,12 +10,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from common import get_engine, get_logger
+from common import get_engine
 from models import SubmissionCriterion, ProcessedSubmission
 
 RE_TRANSACTIONS = re.compile(r"^\d+")
 SUBREDDIT_WATCHEXCHANGE = "watchexchange"
-LOGGER = get_logger("wemb.monitor")
+LOGGER = logging.getLogger("wemb.monitor")
 
 
 def get_permalink(reddit: Reddit, submission: Submission):
@@ -128,7 +129,6 @@ async def run_monitor(args: Namespace):
         user_agent=args.praw_user_agent,
         read_only=True,
     ) as reddit:
-
         # Handle disconnections that would otherwise cause this outer function to exit
         while True:
             LOGGER.info("Starting stream...")
