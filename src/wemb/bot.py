@@ -24,8 +24,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     AsyncSession,
 )
+from sqlalchemy.orm import selectinload
 
-from models import SubmissionType, SubmissionCriterion, Keyword
+from models import SubmissionType, SubmissionCriterion, Keyword, User
 from monitor import run_monitor
 
 LOGGER = logging.getLogger("wemb.bot")
@@ -171,11 +172,16 @@ class Searches(
 
         session: AsyncSession
         async with DB_SESSION() as session:
-            await interaction.edit_original_response(
-                content="Search criteria:\n"
-                + "\t\n".join(
-                    (str(c) for c in await session.scalars(select(SubmissionCriterion)))
+            # noinspection PyTypeChecker
+            # Eager load .keywords, because we're printing the repr
+            criteria: List[SubmissionCriterion] = await session.scalars(
+                select(SubmissionCriterion).options(
+                    selectinload(SubmissionCriterion.keywords)
                 )
+            )
+
+            await interaction.edit_original_response(
+                content="Search criteria:\n" + "\t\n".join((str(c) for c in criteria))
             )
 
     @app_commands.command(name="delete")
@@ -268,8 +274,9 @@ def run_bot(args: Namespace):
         signal.signal(signal.SIGTERM, __dirty_shutdown)
 
     # Disposal is done is the shutdown hook
+    # We need expire_on_commit = False, as documented here: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#asyncio-orm-avoid-lazyloads
     DB_ENGINE = create_async_engine(args.db_connection_string)
-    DB_SESSION = async_sessionmaker(DB_ENGINE, expire_on_commit=True)
+    DB_SESSION = async_sessionmaker(DB_ENGINE, expire_on_commit=False)
 
     async def bot_runner():
         async with bot:

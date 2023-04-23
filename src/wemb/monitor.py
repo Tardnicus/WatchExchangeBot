@@ -9,6 +9,7 @@ from asyncpraw.models import Submission
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
+from sqlalchemy.orm import selectinload
 
 from models import SubmissionCriterion, ProcessedSubmission
 
@@ -69,20 +70,21 @@ async def process_submissions(reddit: Reddit, args, callback=None):
 
         session: AsyncSession
         async with DB_SESSION() as session:
-            if await session.scalar(
-                select(ProcessedSubmission).where(
-                    ProcessedSubmission.id == submission.id
-                )
-            ):
+            if await session.get(ProcessedSubmission, submission.id):
                 LOGGER.info("  Submission has already been processed! Skipping...")
                 continue
 
         session: AsyncSession
         async with DB_SESSION() as session:
-            result = await session.scalars(select(SubmissionCriterion))
-
             # noinspection PyTypeChecker
-            criteria: List[SubmissionCriterion] = result.all()
+            # Eager load .keywords, because we're printing the repr
+            criteria: List[SubmissionCriterion] = (
+                await session.scalars(
+                    select(SubmissionCriterion).options(
+                        selectinload(SubmissionCriterion.keywords)
+                    )
+                )
+            ).all()
 
             if len(criteria) == 0:
                 LOGGER.warning("  No criteria loaded, nothing to do.")
