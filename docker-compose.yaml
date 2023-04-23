@@ -7,6 +7,8 @@ services:
       POSTGRESQL_DATABASE: "${DATABASE_DB_NAME}"
       POSTGRESQL_USERNAME: "${DATABASE_USERNAME}"
       POSTGRESQL_PASSWORD: "${DATABASE_USER_PASSWORD}"
+    volumes:
+      - "postgres-data:/bitnami/postgresql"
 
 #  mysql:
 #    image: "bitnami/mysql:8.0"
@@ -16,6 +18,8 @@ services:
 #      MYSQL_USER: "${DATABASE_USERNAME}"
 #      MYSQL_PASSWORD: "${DATABASE_USER_PASSWORD}"
 #      MYSQL_ROOT_PASSWORD: "${DATABASE_USER_PASSWORD}"
+#    volumes:
+#      - "mysql-data:/bitnami/mysql/data"
 #
 #  mariadb:
 #    image: "bitnami/mariadb:10.10"
@@ -25,6 +29,8 @@ services:
 #      MARIADB_USER: "${DATABASE_USERNAME}"
 #      MARIADB_PASSWORD: "${DATABASE_USER_PASSWORD}"
 #      MARIADB_ROOT_PASSWORD: "${DATABASE_USER_PASSWORD}"
+#    volumes:
+#      - "mariadb-data:/bitnami/mariadb"
 
   wemb:
     build: "."
@@ -44,3 +50,8 @@ services:
 #      DB_CONNECTION_STRING: "mariadb+asyncmy://${DATABASE_USERNAME}:${DATABASE_USER_PASSWORD}@mariadb/${DATABASE_DB_NAME}"
       WEMB_MENTION_STRING: "${WEMB_MENTION_STRING}"
       WEMB_WEBHOOK_URL: "${WEMB_WEBHOOK_URL}"
+
+volumes:
+  postgres-data:
+#  mysql-data:
+#  mariadb-data:
