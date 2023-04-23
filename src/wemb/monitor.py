@@ -115,21 +115,6 @@ async def process_submissions(
                 LOGGER.error("  Exception info:", exc_info=error)
 
 
-def post_discord_message(
-    reddit: Reddit, submission: Submission, webhook_url, mention_string
-):
-    """Posts a message using a webhook, including the submission URL and mentioning a user/role"""
-
-    response = requests.post(
-        webhook_url,
-        json={
-            "content": f"{mention_string} {get_permalink(reddit, submission)}",
-        },
-    )
-
-    LOGGER.debug(f"Response: {response}")
-
-
 async def run_monitor(
     args: Namespace,
     *,

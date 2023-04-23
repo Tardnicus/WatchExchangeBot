@@ -17,20 +17,6 @@ def main():
         epilog="https://github.com/Tardnicus/watch-exchange-bot",
     )
 
-    # TODO: Remove webhook url and mention string
-    parser.add_argument(
-        "--webhook-url",
-        required=True,
-        help="A webhook URL in the form of https://discord.com/api/webhooks/<id>/<token>.",
-        env_var="WEMB_WEBHOOK_URL",
-    )
-    parser.add_argument(
-        "--mention-string",
-        required=True,
-        help="A mention string in the form of <@&role_id>. Use '<@&role_id>' for roles, and '<@user_id>' for specific users.",
-        env_var="WEMB_MENTION_STRING",
-    )
-
     # Program settings
     parser.add_argument(
         "--allow-dirty-shutdown",
