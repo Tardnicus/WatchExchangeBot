@@ -1,9 +1,8 @@
 import logging
 import re
 from argparse import Namespace
-from typing import List, Optional
+from typing import List, Optional, Callable, Coroutine
 
-import requests
 from asyncpraw import Reddit
 from asyncpraw.models import Submission
 from sqlalchemy import select
@@ -51,7 +50,11 @@ def check_criteria(criterion: SubmissionCriterion, submission: Submission) -> bo
     return True
 
 
-async def process_submissions(reddit: Reddit, args, callback=None):
+async def process_submissions(
+    reddit: Reddit,
+    *,
+    callback: Callable[[SubmissionCriterion, Submission, Reddit], Coroutine],
+):
     """Checks for new submissions in the subreddit and matches them against the criteria. Blocks "forever", or until a praw exception occurs. It's expected for the caller to re-call this if necessary"""
 
     LOGGER.info("Started Stream!")
@@ -95,7 +98,7 @@ async def process_submissions(reddit: Reddit, args, callback=None):
 
                 if check_criteria(criterion, submission):
                     LOGGER.info("    Matched! Sending message...")
-                    callback(reddit, submission, args.webhook_url, args.mention_string)
+                    await callback(criterion, submission, reddit)
                 else:
                     LOGGER.info("    Did not match")
 
@@ -128,7 +131,10 @@ def post_discord_message(
 
 
 async def run_monitor(
-    args: Namespace, *, session_factory: async_sessionmaker[AsyncSession]
+    args: Namespace,
+    *,
+    session_factory: async_sessionmaker[AsyncSession],
+    callback: Callable[[SubmissionCriterion, Submission, Reddit], Coroutine],
 ):
     global DB_SESSION
 
@@ -145,4 +151,4 @@ async def run_monitor(
         # Handle disconnections that would otherwise cause this outer function to exit
         while True:
             LOGGER.info("Starting stream...")
-            await process_submissions(reddit, args, callback=post_discord_message)
+            await process_submissions(reddit, callback=callback)

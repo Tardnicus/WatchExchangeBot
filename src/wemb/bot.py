@@ -6,7 +6,9 @@ from argparse import Namespace
 from typing import Literal, List, Optional, Coroutine
 
 import discord
-from discord import Interaction, app_commands, InteractionResponse
+from asyncpraw import Reddit
+from asyncpraw.models import Submission
+from discord import Interaction, app_commands, InteractionResponse, TextChannel, Thread
 from discord.app_commands import Transformer, Range, Transform
 from discord.ext import commands
 from discord.ext.commands import (
@@ -23,11 +25,12 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     async_sessionmaker,
     AsyncSession,
+    async_object_session,
 )
 from sqlalchemy.orm import selectinload
 
 from models import SubmissionType, SubmissionCriterion, Keyword, User
-from monitor import run_monitor
+from monitor import run_monitor, get_permalink
 
 LOGGER = logging.getLogger("wemb.bot")
 
@@ -40,6 +43,37 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = Bot(command_prefix="%", intents=intents)
+
+
+async def notify_user(
+    criterion: SubmissionCriterion, submission: Submission, reddit: Reddit
+):
+    """
+    Notifies the user of a post that matched their criteria.
+
+    Message will be posted in the channel the criterion was originally created in.
+
+    :param criterion: The criteria that triggered this match. This object must be available and scoped within a session.
+    :param submission: The submission itself
+    :param reddit: The reddit instance
+    :return:
+    """
+
+    LOGGER.debug(f"  Notification triggered for criterion ID '{criterion.id}'!")
+    LOGGER.info("  Notifying user(s)...")
+
+    # noinspection PyTypeChecker
+    # We have to get the AsyncSession this object is bound to, to refresh its relationships.
+    session: AsyncSession = async_object_session(criterion)
+    await session.refresh(criterion, ["keywords", "owner"])
+
+    # This will always be a TextChannel or Thread, from the way it's added to the database
+    channel: TextChannel | Thread = bot.get_channel(criterion.channel_id)
+
+    LOGGER.debug(f"  Posting notification in '#{channel.name}' ({channel.id})...")
+    await channel.send(f"<@{criterion.owner_id}>\n{get_permalink(reddit, submission)}")
+
+    LOGGER.info(f"  Notification sent successfully!")
 
 
 @bot.event
@@ -292,7 +326,9 @@ def run_bot(args: Namespace):
             await bot.start(args.discord_api_token, reconnect=True)
 
     # Save PRAW coroutine to run in on_ready()
-    MONITOR_COROUTINE = run_monitor(args, session_factory=DB_SESSION)
+    MONITOR_COROUTINE = run_monitor(
+        args, session_factory=DB_SESSION, callback=notify_user
+    )
 
     try:
         loop.create_task(bot_runner(), name="bot")
