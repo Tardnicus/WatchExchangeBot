@@ -4,4 +4,10 @@ SQLAlchemy==2.0.10
 alembic==1.10.3
 discord==2.2.2
 ConfigArgParse==1.5.3
+
+# Postgres Support
 asyncpg==0.27.0
+
+# MySQL / MariaDB support
+asyncmy==0.2.7
+cryptography==40.0.2
