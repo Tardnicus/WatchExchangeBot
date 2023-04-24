@@ -8,7 +8,14 @@ from typing import Literal, List, Optional, Coroutine
 import discord
 from asyncpraw import Reddit
 from asyncpraw.models import Submission
-from discord import Interaction, app_commands, InteractionResponse, TextChannel, Thread
+from discord import (
+    Interaction,
+    app_commands,
+    InteractionResponse,
+    TextChannel,
+    Thread,
+    ChannelType,
+)
 from discord.app_commands import Transformer, Range, Transform
 from discord.ext import commands
 from discord.ext.commands import (
@@ -70,8 +77,29 @@ async def notify_user(
     # This will always be a TextChannel or Thread, from the way it's added to the database
     channel: TextChannel | Thread = bot.get_channel(criterion.channel_id)
 
-    LOGGER.debug(f"  Posting notification in '#{channel.name}' ({channel.id})...")
-    await channel.send(f"<@{criterion.owner_id}>\n{get_permalink(reddit, submission)}")
+    thread_name = "watch-notifications"
+
+    # If this is a text channel, we have to create and/or find the notification thread
+    if channel.type == ChannelType.text:
+        thread = {t.name: t for t in channel.threads}.get(thread_name, None)
+        if thread is None:
+            LOGGER.debug("Creating notification thread...")
+            thread = await channel.create_thread(
+                name=thread_name, type=ChannelType.public_thread
+            )
+    else:
+        # In the case this is already a thread (i.e. submission was created in a thread), bind the variable to channel, for the next step
+        thread = channel
+
+    # TODO: Handle cases where:
+    #  - permissions are not available
+    #  - channels have been permanently archived
+    #  - ID of channel or thread is no longer relevant if a channel/thread is deleted (message user?, show as disabled?)
+
+    LOGGER.debug(
+        f"  Posting notification in thread/channel '#{thread.name}' ({thread.id})..."
+    )
+    await thread.send(f"<@{criterion.owner_id}>\n{get_permalink(reddit, submission)}")
 
     LOGGER.info(f"  Notification sent successfully!")
 
