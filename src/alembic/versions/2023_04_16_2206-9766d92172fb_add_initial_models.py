@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "processed_submission",
-        sa.Column("id", sa.String(), autoincrement=False, nullable=False),
+        sa.Column("id", sa.String(16), autoincrement=False, nullable=False),
         sa.Column("date_processed", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -39,7 +39,7 @@ def upgrade() -> None:
     op.create_table(
         "keyword",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("content", sa.String(), nullable=False),
+        sa.Column("content", sa.String(64), nullable=False),
         sa.Column("criterion_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["criterion_id"],

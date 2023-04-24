@@ -18,7 +18,4 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY --chown=python:python ./src /app
 COPY --chown=python:python --chmod=700 ./entrypoint.sh /app
 
-# A config.yaml mount point is expected, as well as env vars for PRAW
 ENTRYPOINT [ "./entrypoint.sh" ]
-
-

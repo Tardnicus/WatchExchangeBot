@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum, unique
 from typing import List
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, BigInteger
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -26,6 +26,16 @@ class SubmissionType(Enum):
 
 class Base(DeclarativeBase):
     pass
+
+
+class User(Base):
+    """Represents a single discord user (by ID)"""
+
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=False)
+
+    criteria: Mapped[List["SubmissionCriterion"]] = relationship(back_populates="owner")
 
 
 class Keyword(Base):
@@ -61,6 +71,12 @@ class SubmissionCriterion(Base):
         back_populates="criterion", cascade="all, delete, delete-orphan"
     )
     all_required: Mapped[bool] = mapped_column(default=True)
+
+    owner: Mapped["User"] = relationship(back_populates="criteria")
+    owner_id: Mapped[int] = mapped_column(BigInteger(), ForeignKey("user.id"))
+
+    # This is the text channel ID that this search criteria "belongs to"
+    channel_id: Mapped[int] = mapped_column(BigInteger(), nullable=False)
 
     @validates("min_transactions")
     def validate_min_transactions(self, key, value):

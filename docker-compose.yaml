@@ -1,12 +1,55 @@
 version: "3.9"
 services:
-  wemb-core:
-    build: "."
+  postgres:
+    image: "bitnami/postgresql:15"
     restart: "unless-stopped"
     environment:
-      - praw_client_id=${PRAW_CLIENT_ID}
-      - praw_client_secret=${PRAW_CLIENT_SECRET}
-      - praw_user_agent=${PRAW_USER_AGENT}
-      - WEMB_LOGLEVEL=DEBUG
+      POSTGRESQL_DATABASE: "${DATABASE_DB_NAME}"
+      POSTGRESQL_USERNAME: "${DATABASE_USERNAME}"
+      POSTGRESQL_PASSWORD: "${DATABASE_USER_PASSWORD}"
     volumes:
-      - './src/config.yaml:/app/config.yaml:ro'
+      - "postgres-data:/bitnami/postgresql"
+
+#  mysql:
+#    image: "bitnami/mysql:8.0"
+#    restart: "unless-stopped"
+#    environment:
+#      MYSQL_DATABASE: "${DATABASE_DB_NAME}"
+#      MYSQL_USER: "${DATABASE_USERNAME}"
+#      MYSQL_PASSWORD: "${DATABASE_USER_PASSWORD}"
+#      MYSQL_ROOT_PASSWORD: "${DATABASE_USER_PASSWORD}"
+#    volumes:
+#      - "mysql-data:/bitnami/mysql/data"
+#
+#  mariadb:
+#    image: "bitnami/mariadb:10.10"
+#    restart: "unless-stopped"
+#    environment:
+#      MARIADB_DATABASE: "${DATABASE_DB_NAME}"
+#      MARIADB_USER: "${DATABASE_USERNAME}"
+#      MARIADB_PASSWORD: "${DATABASE_USER_PASSWORD}"
+#      MARIADB_ROOT_PASSWORD: "${DATABASE_USER_PASSWORD}"
+#    volumes:
+#      - "mariadb-data:/bitnami/mariadb"
+
+  wemb:
+    build: "."
+    restart: "unless-stopped"
+    depends_on:
+      - "postgres"
+#      - "mysql"
+#      - "mariadb"
+    environment:
+      WEMB_LOGLEVEL: "${WEMB_LOGLEVEL}"
+      DISCORD_API_TOKEN: "${DISCORD_API_TOKEN}"
+      PRAW_CLIENT_ID: "${PRAW_CLIENT_ID}"
+      PRAW_CLIENT_SECRET: "${PRAW_CLIENT_SECRET}"
+      PRAW_USER_AGENT: "${PRAW_USER_AGENT}"
+      DB_CONNECTION_STRING: "postgresql+asyncpg://${DATABASE_USERNAME}:${DATABASE_USER_PASSWORD}@postgres/${DATABASE_DB_NAME}"
+#      DB_CONNECTION_STRING: "mysql+asyncmy://${DATABASE_USERNAME}:${DATABASE_USER_PASSWORD}@mysql/${DATABASE_DB_NAME}"
+#      DB_CONNECTION_STRING: "mariadb+asyncmy://${DATABASE_USERNAME}:${DATABASE_USER_PASSWORD}@mariadb/${DATABASE_DB_NAME}"
+
+volumes:
+  postgres-data:
+#  mysql-data:
+#  mariadb-data:
