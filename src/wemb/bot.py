@@ -110,12 +110,23 @@ async def on_ready():
 
     LOGGER.info("Logged in!")
     LOGGER.debug("Adding cogs...")
-    await bot.add_cog(Searches())
+
+    # Remove all cogs before adding them to ensure idempotency
+    for cog in (Searches(),):
+        await bot.remove_cog(cog.qualified_name)
+        await bot.add_cog(cog)
 
     LOGGER.info("Starting monitor...")
 
     if MONITOR_COROUTINE is not None:
-        asyncio.get_event_loop().create_task(MONITOR_COROUTINE, name="monitor")
+        tasks = [task for task in asyncio.all_tasks() if task.get_name() == "monitor"]
+
+        # Check if task is already running, else create it
+        if len(tasks) > 0:
+            LOGGER.debug("Monitor task not created! (already running)")
+        else:
+            LOGGER.debug("Creating monitor task...")
+            asyncio.get_event_loop().create_task(MONITOR_COROUTINE, name="monitor")
     else:
         LOGGER.critical(
             "MONITOR_COROUTINE was not initialized properly! PRAW will NOT start."
