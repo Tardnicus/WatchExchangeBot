@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import re
 from argparse import Namespace
+from asyncio import CancelledError
 from typing import List, Optional, Callable, Coroutine
 
 from asyncpraw import Reddit
@@ -125,15 +127,30 @@ async def run_monitor(
 
     DB_SESSION = session_factory
 
-    LOGGER.info("Initialized!")
+    while True:
+        LOGGER.info("Initializing monitor loop...")
+        try:
+            async with Reddit(
+                client_id=args.praw_client_id,
+                client_secret=args.praw_client_secret,
+                user_agent=args.praw_user_agent,
+                read_only=True,
+            ) as reddit:
+                LOGGER.info("Starting stream...")
+                await process_submissions(reddit, callback=callback)
 
-    async with Reddit(
-        client_id=args.praw_client_id,
-        client_secret=args.praw_client_secret,
-        user_agent=args.praw_user_agent,
-        read_only=True,
-    ) as reddit:
-        # Handle disconnections that would otherwise cause this outer function to exit
-        while True:
-            LOGGER.info("Starting stream...")
-            await process_submissions(reddit, callback=callback)
+        except CancelledError as error:
+            # https://docs.python.org/3/library/asyncio-task.html#task-cancellation
+            LOGGER.debug("Monitor loop has been cancelled! Exiting...")
+            raise error
+
+        except Exception as error:
+            # This is intentionally a broad exception clause to make sure the task doesn't quit before the program closes.
+            # Ideally, this should slowly become less relied on as more exceptions are caught within process_submissions()
+            LOGGER.error(
+                f"Uncaught exception in monitor loop: {error!s}", exc_info=error
+            )
+            LOGGER.info("Restarting monitor loop!")
+
+            # Add some sleep buffer to make sure we're not hammering Reddit's login endpoint. stream.submissions() grabs the last 100 submissions anyway, so we won't be missing out on data.
+            await asyncio.sleep(10)
