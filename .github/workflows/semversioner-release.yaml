@@ -21,6 +21,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install semversioner
 
+      - name: "Check for new semversioner changes"
+        continue-on-error: true
+        run: |
+          semversioner check
+
       - name: "Release version"
         run: |
           semversioner release
