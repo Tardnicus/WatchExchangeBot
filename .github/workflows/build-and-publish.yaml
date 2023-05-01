@@ -42,15 +42,15 @@ jobs:
         run: |
           case "${{ inputs.release-type }}" in
             branch)
-              echo "version-string=0.0.0-${{ github.ref_name }}" >> "${GITHUB_OUTPUT}"
+              echo "VERSION_STRING=0.0.0-${{ github.ref_name }}" >> "${GITHUB_OUTPUT}"
               ;;
           
             prerelease)
-              echo "version-string={{version}}-prerelease" >> "${GITHUB_OUTPUT}"
+              echo "VERSION_STRING={{version}}-prerelease" >> "${GITHUB_OUTPUT}"
               ;;
           
             release)
-              echo "version-string={{version}}" >> "${GITHUB_OUTPUT}"
+              echo "VERSION_STRING={{version}}" >> "${GITHUB_OUTPUT}"
               ;;
           
             *)
@@ -59,7 +59,7 @@ jobs:
               ;;
           esac
 
-          echo "current-version=$(semversioner current-version)" >> "${GITHUB_OUTPUT}"
+          echo "CURRENT_VERSION=$(semversioner current-version)" >> "${GITHUB_OUTPUT}"
 
       - name: "Extract Docker metadata"
         id: meta
@@ -67,7 +67,7 @@ jobs:
         with:
           images: "${{ env.REGISTRY }}/${{ github.repository }}"
           tags: |
-            type=semver,pattern=${{ steps.version.version-string }},value=${{ steps.version.current-version }}
+            type=semver,pattern=${{ steps.version.outputs.VERSION_STRING }},value=${{ steps.version.outputs.CURRENT_VERSION }}
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
