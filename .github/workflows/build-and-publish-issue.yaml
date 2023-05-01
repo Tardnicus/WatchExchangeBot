@@ -13,4 +13,4 @@ jobs:
   build-and-publish:
     uses: "./.github/workflows/build-and-publish.yaml"
     with:
-      release-type: "release"
+      release-type: "issue"
