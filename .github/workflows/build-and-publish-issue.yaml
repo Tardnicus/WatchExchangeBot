@@ -9,4 +9,4 @@ on:
 
 jobs:
   semversioner-release:
-    uses: "./semversioner-release.yaml"
+    uses: "./.github/workflows/semversioner-release.yaml"
