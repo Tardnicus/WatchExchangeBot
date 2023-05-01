@@ -1,0 +1,32 @@
+name: "Semversioner Release"
+
+on:
+  workflow_call:
+
+jobs:
+  semversioner-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v3
+
+      - name: "Set up Python 3"
+        uses: actions/setup-python@v4
+
+      - name: "Install semversioner"
+        run: |
+          python -m pip install --upgrade pip
+          pip install semversioner
+
+      - name: "Release version"
+        run: |
+          semversioner release
+          semversioner changelog > CHANGELOG.md
+
+      - name: "Push files to remote"
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .semversioner CHANGELOG.md
+          git commit -m "Release version $(semversioner current-version)"
