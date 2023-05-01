@@ -7,6 +7,10 @@ on:
         type: boolean
         default: false
         description: "Push the built container to the registry"
+      release-type:
+        type: string
+        default: "issue"
+        description: "The version type to release"
 
 env:
   REGISTRY: "ghcr.io"
@@ -33,6 +37,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade semversioner
 
+      - name: "Extract Docker metadata"
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: "${{ env.REGISTRY }}/${{ github.repository }}"
+
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
       - name: Log into registry
@@ -42,12 +52,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: "Extract Docker metadata"
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: "${{ env.REGISTRY }}/${{ github.repository }}"
 
       - name: "Build and Push Image"
         uses: docker/build-push-action@v4
