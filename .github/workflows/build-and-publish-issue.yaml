@@ -8,5 +8,7 @@ on:
       - "test/**"
 
 jobs:
-  semversioner-release:
-    uses: "./.github/workflows/semversioner-release.yaml"
+#  semversioner-release:
+#    uses: "./.github/workflows/semversioner-release.yaml"
+  build-and-publish:
+    uses: "./.github/workflows/build-and-publish.yaml"
