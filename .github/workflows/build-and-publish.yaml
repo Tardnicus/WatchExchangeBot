@@ -76,7 +76,7 @@ jobs:
         with:
           images: "${{ env.REGISTRY }}/${{ github.repository }}"
           flavor: |
-            latest=${{ inputs.release-type == "release" && "true" || "false" }}
+            latest=${{ inputs.release-type == 'release' && 'true' || 'false' }}
           tags: ${{ steps.version.outputs.TAGS }}
 
       # Login against a Docker registry except on PR
