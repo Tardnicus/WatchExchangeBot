@@ -12,5 +12,3 @@ jobs:
 #    uses: "./.github/workflows/semversioner-release.yaml"
   build-and-publish:
     uses: "./.github/workflows/build-and-publish.yaml"
-    with:
-      release-type: "issue"
