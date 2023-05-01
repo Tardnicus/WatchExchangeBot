@@ -53,7 +53,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Build ${{ !inputs.push && 'and Push' || '' }} Image"
+      - name: "Build ${{ inputs.push && 'and Push' || '' }} Image"
         uses: docker/build-push-action@v4
         with:
           context: .
