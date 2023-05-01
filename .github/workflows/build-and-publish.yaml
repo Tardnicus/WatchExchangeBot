@@ -2,7 +2,14 @@ name: "Build and Publish Container"
 
 on:
   workflow_call:
+    inputs: &inputs
+      push:
+        type: boolean
+        default: false
+        description: "Push the built container to the registry"
+
   workflow_dispatch:
+    inputs: *inputs
 
 env:
   REGISTRY: "ghcr.io"
@@ -32,3 +39,13 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: "${{ env.REGISTRY }}/${{ github.repository }}"
+
+      - name: "Build and Push Image"
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: ${{ inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
