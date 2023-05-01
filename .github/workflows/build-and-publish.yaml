@@ -9,8 +9,8 @@ on:
         description: "Push the built container to the registry"
       release-type:
         type: string
-        default: "issue"
-        description: "The version type to release"
+        default: "branch"
+        description: "The version type to release. Valid values are 'branch', 'prerelease', and 'release'"
 
 env:
   REGISTRY: "ghcr.io"
@@ -37,11 +37,37 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade semversioner
 
+      - name: "Set up version string"
+        id: "version"
+        run: |
+          case "${{ inputs.release-type }}" in
+            branch)
+              echo "version-string=0.0.0-${{ github.ref_name }}" >> "${GITHUB_OUTPUT}"
+              ;;
+          
+            prerelease)
+              echo "version-string={{version}}-prerelease" >> "${GITHUB_OUTPUT}"
+              ;;
+          
+            release)
+              echo "version-string={{version}}" >> "${GITHUB_OUTPUT}"
+              ;;
+          
+            *)
+              echo "'${{ inputs.release-type }}' is not a valid choice for release-type!" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "current-version=$(semversioner current-version)" >> "${GITHUB_OUTPUT}"
+
       - name: "Extract Docker metadata"
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: "${{ env.REGISTRY }}/${{ github.repository }}"
+          tags: |
+            type=semver,pattern=${{ steps.version.version-string }},value=${{ steps.version.current-version }}
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
