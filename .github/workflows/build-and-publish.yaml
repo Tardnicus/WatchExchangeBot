@@ -40,34 +40,44 @@ jobs:
       - name: "Set up version string"
         id: "version"
         run: |
+          CURRENT_VERSION=$(semversioner current-version)
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+
+          # Start of multiline input
+          echo "TAGS<<${EOF}" >> "${GITHUB_OUTPUT}"
+          
           case "${{ inputs.release-type }}" in
             branch)
-              echo "VERSION_STRING=0.0.0-${{ github.ref_name }}" >> "${GITHUB_OUTPUT}"
+              echo "type=semver,pattern=0.0.0-${{ github.ref_name }},value=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
               ;;
           
             prerelease)
-              echo "VERSION_STRING={{version}}-prerelease" >> "${GITHUB_OUTPUT}"
+              echo "type=semver,pattern={{version}}-prerelease,value=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
               ;;
           
             release)
-              echo "VERSION_STRING={{version}}" >> "${GITHUB_OUTPUT}"
+              echo "type=semver,pattern={{version}},value=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
+              echo "type=semver,pattern={{major}}.{{minor}},value=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
+              echo "type=semver,pattern={{major}},value=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
               ;;
           
             *)
               echo "'${{ inputs.release-type }}' is not a valid choice for release-type!" >&2
+              echo "${EOF}" >> "${GITHUB_OUTPUT}"
               exit 1
               ;;
           esac
-
-          echo "CURRENT_VERSION=$(semversioner current-version)" >> "${GITHUB_OUTPUT}"
+          
+          echo "${EOF}" >> "${GITHUB_OUTPUT}"
 
       - name: "Extract Docker metadata"
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: "${{ env.REGISTRY }}/${{ github.repository }}"
-          tags: |
-            type=semver,pattern=${{ steps.version.outputs.VERSION_STRING }},value=${{ steps.version.outputs.CURRENT_VERSION }}
+          flavor: |
+            latest=${{ inputs.release-type == "release" && "true" || "false" }}
+          tags: ${{ steps.version.outputs.TAGS }}
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
