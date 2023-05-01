@@ -6,16 +6,16 @@ on:
       - "wftest/development"
 
 jobs:
+  semversioner-release:
+    uses: "./.github/workflows/semversioner-release.yaml"
   build-and-publish:
+    needs: semversioner-release
     uses: "./.github/workflows/build-and-publish.yaml"
     with:
       push: true
       release-type: "prerelease"
-  semversioner-release:
-    needs: build-and-publish
-    uses: "./.github/workflows/semversioner-release.yaml"
   git-tag:
-    needs: semversioner-release
+    needs: build-and-publish
     uses: "./.github/workflows/tag-repo.yaml"
     with:
       type: "prerelease"
