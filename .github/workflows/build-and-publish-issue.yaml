@@ -1,0 +1,12 @@
+name: "Build and Publish (Issue Branch)"
+
+on:
+  push:
+    branches:
+      - "feat/**"
+      - "fix/**"
+      - "test/**"
+
+jobs:
+  semversioner-release:
+    uses: "./semversioner-release.yaml"
