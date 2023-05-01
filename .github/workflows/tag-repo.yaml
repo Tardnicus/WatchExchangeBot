@@ -45,5 +45,5 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          git tag -a "${TAGNAME}"
+          git tag -a "${TAGNAME}" -m "Release version '${TAGNAME}'"
           git push origin "${TAGNAME}"
