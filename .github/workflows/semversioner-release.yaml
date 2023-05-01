@@ -27,11 +27,13 @@ jobs:
           semversioner check
 
       - name: "Release version"
+        if: ${{ success() }}
         run: |
           semversioner release
           semversioner changelog > CHANGELOG.md
 
       - name: "Push files to remote"
+        if: ${{ success() }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
