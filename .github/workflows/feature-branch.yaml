@@ -1,4 +1,4 @@
-name: "Build and Publish (Issue Branch)"
+name: "Build and Publish (Feature Branches)"
 
 on:
   push:
@@ -8,9 +8,8 @@ on:
       - "test/**"
 
 jobs:
-#  semversioner-release:
-#    uses: "./.github/workflows/semversioner-release.yaml"
   build-and-publish:
     uses: "./.github/workflows/build-and-publish.yaml"
     with:
       push: true
+      release-type: "branch"
