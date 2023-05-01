@@ -1,0 +1,21 @@
+name: "Build and Publish"
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  build-and-publish:
+    uses: "./.github/workflows/build-and-publish.yaml"
+    with:
+      push: true
+      release-type: "release"
+  semversioner-release:
+    needs: build-and-publish
+    uses: "./.github/workflows/semversioner-release.yaml"
+  git-tag:
+    needs: semversioner-release
+    uses: "./.github/workflows/tag-repo.yaml"
+    with:
+      type: "release"
