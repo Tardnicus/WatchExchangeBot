@@ -3,7 +3,7 @@ name: "Build and Publish (Development)"
 on:
   push:
     branches:
-      - "test/development"
+      - "wftest/development"
 
 jobs:
   build-and-publish:
