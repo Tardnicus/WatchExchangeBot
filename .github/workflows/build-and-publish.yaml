@@ -2,14 +2,11 @@ name: "Build and Publish Container"
 
 on:
   workflow_call:
-    inputs: &inputs
+    inputs:
       push:
         type: boolean
         default: false
         description: "Push the built container to the registry"
-
-  workflow_dispatch:
-    inputs: *inputs
 
 env:
   REGISTRY: "ghcr.io"
