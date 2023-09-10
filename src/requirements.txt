@@ -1,12 +1,12 @@
-asyncpraw==7.7.0
-SQLAlchemy==2.0.10
-alembic==1.10.3
-discord==2.2.2
-ConfigArgParse==1.5.3
+asyncpraw==7.7.1
+SQLAlchemy==2.0.20
+alembic==1.12.0
+discord==2.3.2
+ConfigArgParse==1.7
 
 # Postgres Support
-asyncpg==0.27.0
+asyncpg==0.28.0
 
 # MySQL / MariaDB support
-asyncmy==0.2.7
-cryptography==40.0.2
+asyncmy==0.2.8
+cryptography==41.0.3
