@@ -1,5 +1,5 @@
 # One-layer image since compilation is not necessary
-FROM python:3.10.9-alpine3.17 as final
+FROM python:3.11-alpine as final
 
 # Add container user and drop privileges
 RUN addgroup -S python && \
